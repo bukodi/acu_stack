@@ -22,10 +22,8 @@ Name | width | in/out | Side | Description
 `adapt_data`|data_width|in/out|Adapter| Kétirányú adatbusz az Adapter és a usr Logic között
 `clk`||in|| Órajel
 `as_reset_n`||in|| Rendszer szintű reset vonal
-`recover_fsm_n`||in|| Alacsony-aktív vezérlő bemenet, amellyel az állapotgép hiba után
-alapállapotba állítható.
-`user_fsm_ivnvalid_state_error`||out|| Állapotgép érvénytelen állapotát jelző, magas-aktív
-állapotjel.
+`recover_fsm_n`||in|| Alacsony-aktív vezérlő bemenet, amellyel az állapotgép hiba után alapállapotba állítható.
+`user_fsm_ivnvalid_state_error`||out|| Állapotgép érvénytelen állapotát jelző, magas-aktív állapotjel.
 `mem_data_out`|data_width|out|Mem| (connected to entity edac_protected_ram.data_in)
 `mem_data_in`|data_width|in|Mem| (connected to entity edac_protected_ram.data_out)
 `mem_re`||out|Mem| A User Logic jelzi a memória számára egy olvasás műveletet kezdetét 
