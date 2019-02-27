@@ -8,7 +8,7 @@ entity edac_protected_stack is
 		stack_size_log2:					integer range 0 to 16;
 		addr_push:							integer range 0 to 16;
 		addr_pop:							integer range 0 to 16;
-		addr_top:							integer range 0 to 16;
+		addr_top:							integer range 0 to 16
 	);
 	
 	port (
@@ -36,18 +36,17 @@ end entity edac_protected_stack;
 ---------------------------------------------------------------------------------------------------
 architecture rtl of edac_protected_stack is
 
-    signal proc_command                             std_logic;
-    signal mem_op_req                               std_logic;
-    signal mem_op_compl                             std_logic;
-    signal adapt_op_req                             std_logic;
-    signal adapt_op_compl                           std_logic;
     type state is(
-
+    	proc_command,
+    	mem_op_req,
+    	mem_op_compl,
+    	adapt_op_req,
+    	adapt_op_compl
     )
 	
 begin
     L_USER_LOGIC: process(clk,as_reset_n)
-
+    -- Points to the last used address (eg. top of the stack)
     variable stack_pointer:                 uinsinged(stack_size_log2-1 downto 0);
     
     begin
