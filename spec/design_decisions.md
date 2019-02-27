@@ -8,6 +8,7 @@ Azért döntöttünk így, mert a Stack állapotát csak az ACU Core befolyásol
 elkerülhetjük azokat az ilyen eseteket.
 * Úgyanezen ok miatt nem biztosítunk külön vezérlőjeleket arra, hogy az ACU Core lekérdezze a stack méretét.
 * Nem használunk megszakítást
+* A `stack_pointer` változó mutathat az első szabad memória cellára, vagy az utoljára használtra is. Mi azt választottuk, hogy az utolsó használatban levő cellát címezze, mert így a `top` művelet esetén közvetlenül használhatjuk.
 
 # Elnevezések
 * _User logic_ - Az egyedi interfésszel rendelkező, újrafelhasználható modul, amelyet stack kezelést megvalósítja egy blokk memória modulra épülve.
