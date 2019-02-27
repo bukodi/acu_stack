@@ -4,9 +4,7 @@ use ieee.numeric_std.all;
 ---------------------------------------------------------------------------------------------------
 entity edac_protected_stack is
 	generic (
-		metastable_filter_bypass_push:					boolean;
-		metastable_filter_bypass_pop:					boolean;
-		metastable_filter_bypass_top:					boolean;
+		
 		metastable_filter_bypass_reset_error_flags_n:	boolean;
 		address_width:									integer range 2 to 8;
 		data_width:										integer range 2 to 16;
