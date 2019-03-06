@@ -15,8 +15,10 @@ entity edac_protected_stack is
 		adapt_push:							in		std_logic;
 		adapt_pop:							in		std_logic;
 		adapt_top:							in		std_logic;
+		-- to do: adapt_re/we ports redundant can be calc from push/pop/top
 		adapt_re:							in	 	std_logic;
 		adapt_we:							in		std_logic;
+		--
 		adapt_re_ack:						out		std_logic;
 		adapt_we_ack:						out		std_logic;
 		adapt_data							inout	std_logic_vector(data_width-1 downto 0);
@@ -36,12 +38,19 @@ end entity edac_protected_stack;
 ---------------------------------------------------------------------------------------------------
 architecture rtl of edac_protected_stack is
 
+	signal stack_empty								std_logic;
+
     type state is(
-    	proc_command,
-    	mem_op_req,
-    	mem_op_compl,
-    	adapt_op_req,
-    	adapt_op_compl
+    	idle,
+    	process_command,
+    	push_calc_addr,
+    	push_before_mem,
+    	push_after_mem,
+    	pop_before_mem,
+    	pop_after_mem,
+    	top_before_mem,
+    	top_after_mem,
+    	invalid
     )
 	
 begin
@@ -53,17 +62,68 @@ begin
         if(as_reset_n='0') then
             --
         elsif(rising_edge(clk)) then
-            --PUSH
-            if(adapt_push = '1' and adapt_we = '1') then
-                if(adapt_pop /= '0' or adapt_top /= '0' or adapt_we /= '0') then
-                    user_fsm_invalid_state_error <= '1';
-                    report "bajvan"
-                else then
-                    mem_we <= adapt_we;
-                    case state when po
-
-            --POP
-            --TOP	
-
+            case state is
+				when idle	=>	if(adapt_push = '1') then
+									-- check invalid state
+									if(adapt_we /='1' or  adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+										state <= invalid;
+									else
+										state <= push_before_mem;
+										if(stack_empty = '1') then
+											stack_pointer <= '0'
+											stack_empty <= '0'
+										else
+											stack_pointer <= stack_logic_vector(unsigned(stack_pointer)+1)
+										end if;
+									end if;
+								elsif(adapt_pop = '1') then
+									-- check invalid state
+									if(adapt_re /='1' or adapt_we /= '0' or adapt_push /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+										state <= invalid;
+									else
+										state <= pop_before_mem;
+									end if;
+								elsif(adapt_top = '1') then
+									-- check invalid state
+									if(adapt_re /='1' or adapt_we /= '0' or adapt_push /= '0' or adapt_pop /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+										state <= invalid;
+									else
+										state <= top_before_mem;
+									end if;
+								end if;
+				
+				--PUSH--------------------------------------------------
+				when push_calc_addr	=>	if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+											state <= invalid;
+										else
+											mem_addr <= stack_pointer;
+											mem_data_out <= adapt_data;
+											state <= push_before_mem;
+										end if;
+				when push_before_mem	=>	if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+												state <= invalid;
+											else
+												mem_we <= 1
+												state <= push_wait_mem;
+											end if;
+				when push_after_mem	=>	if(mem_we_ack = '1') then
+											if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
+												state <= invalid;
+											else
+												adapt_we_ack <= mem_we_ack
+												state <= idle
+				--POP---------------------------------------------------
+				when pop_before_mem
+				when pop_after_mem
+				--TOP---------------------------------------------------
+				when top_before_mem
+				when top_after_mem
+				--INVALID STATE-----------------------------------------
+				when invalid
+				
+				when others
+				
+			end case
+	end process
 end architecture rtl;
 ---------------------------------------------------------------------------------------------------
