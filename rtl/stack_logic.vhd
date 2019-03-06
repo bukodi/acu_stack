@@ -73,7 +73,7 @@ begin
 											stack_pointer <= '0';
 											stack_empty <= '0';
 										else
-											stack_pointer <= stack_logic_vector(unsigned(stack_pointer)+1)
+											stack_pointer <= stack_logic_vector(unsigned(stack_pointer)+1);
 										end if;
 									end if;
 								elsif(adapt_pop = '1') then
@@ -93,25 +93,27 @@ begin
 								end if;
 				
 				--PUSH--------------------------------------------------
-				when push_calc_addr	=>	if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+				when push_calc_addr	=>	if(adapt_we /='1' or  adapt_re /= '0' or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 											state <= invalid;
 										else
 											mem_addr <= stack_pointer;
 											mem_data_out <= adapt_data;
 											state <= push_before_mem;
 										end if;
-				when push_before_mem	=>	if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
+				when push_before_mem	=>	if(adapt_we /='1' or  adapt_re /= '0' or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 												state <= invalid;
 											else
 												mem_we <= '1';
 												state <= push_wait_mem;
 											end if;
 				when push_after_mem	=>	if(mem_we_ack = '1') then
-											if(adapt_we /='1' or  adapt_re /= '0' adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
+											if(adapt_we /='1' or  adapt_re /= '0' or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
 												state <= invalid;
 											else
 												adapt_we_ack <= mem_we_ack;
 												state <= idle;
+											end if;
+										end if;
 				--POP---------------------------------------------------
 				when pop_before_mem
 				when pop_after_mem
