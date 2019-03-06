@@ -21,7 +21,7 @@ entity edac_protected_stack is
 		--
 		adapt_re_ack:						out		std_logic;
 		adapt_we_ack:						out		std_logic;
-		adapt_data							inout	std_logic_vector(data_width-1 downto 0);
+		adapt_data:							inout	std_logic_vector(data_width-1 downto 0);
 		clk:								in		std_logic;
 		as_reset_n:							in		std_logic;
 		recover_fsm_n:						in		std_logic;
@@ -32,7 +32,7 @@ entity edac_protected_stack is
 		mem_we:								out		std_logic;
 		mem_re_ack:							in		std_logic;
 		mem_we_ack:							in		std_logic;
-		mem_addr							out		std_logic_vector(data_width-1 downto 0);
+		mem_addr:							out		std_logic_vector(data_width-1 downto 0)
 	);
 end entity edac_protected_stack;
 ---------------------------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ begin
             --
         elsif(rising_edge(clk)) then
             case state is
-				when idle	=>	if(adapt_push = '1') then
+				when idle	=>		if(adapt_push = '1') then
 									-- check invalid state
 									if(adapt_we /='1' or  adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 										state <= invalid;
