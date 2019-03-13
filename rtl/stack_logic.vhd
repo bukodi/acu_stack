@@ -10,7 +10,7 @@ entity edac_protected_stack is
 		addr_pop        : integer range 0 to 16;
 		addr_top        : integer range 0 to 16
 	);
- 
+
 	port (
 		adapt_push : in std_logic;
 		adapt_pop  : in std_logic;
@@ -50,15 +50,17 @@ architecture rtl of edac_protected_stack is
 	top_after_mem, 
 	invalid
 	);
- 
-	signal stack_empty : std_logic;
-	signal state       : state_t;
+
+	-- Points to the last used address (eg. top of the stack)
+	signal stack_pointer : std_logic_vector(stack_size_log2 - 1 downto 0);
+	signal stack_empty   : std_logic;
+	signal state         : state_t;
 
 begin
 	L_USER_LOGIC : process (clk, as_reset_n)
-		-- Points to the last used address (eg. top of the stack)
-		variable stack_pointer : uinsinged(stack_size_log2 - 1 downto 0);
  
+ 
+
 	begin
 		if (as_reset_n = '0') then
 			--
@@ -71,10 +73,10 @@ begin
 					else
 						state <= push_before_mem;
 						if (stack_empty = '1') then
-							stack_pointer <= '0';
+							stack_pointer <= (others => '0');
 							stack_empty   <= '0';
 						else
-							stack_pointer <= stack_logic_vector(unsigned(stack_pointer) + 1);
+							stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
 						end if;
 					end if;
 			elsif (adapt_pop = '1') then
@@ -92,7 +94,7 @@ begin
 					state <= top_before_mem;
 				end if;
 			end if;
- 
+
 			--PUSH--------------------------------------------------
 				when push_calc_addr => if (adapt_we /= '1' or adapt_re /= '0' or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 				state <= invalid;
@@ -105,7 +107,7 @@ begin
 			state <= invalid;
 	else
 		mem_we <= '1';
-		state  <= push_wait_mem;
+		state  <= push_after_mem;
 	end if;
 				when push_after_mem => if (mem_we_ack = '1') then
 			if (adapt_we /= '1' or adapt_re /= '0' or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
@@ -123,9 +125,9 @@ begin
 	--when top_after_mem
 	--INVALID STATE-----------------------------------------
 	--when invalid
- 
-				when others => state <= error;
- 
+
+				when others => state <= invalid;
+
 	end case;
 end if;
 end process;
