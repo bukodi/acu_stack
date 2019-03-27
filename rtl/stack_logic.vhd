@@ -111,6 +111,7 @@ begin
 											adapt_we_ack	<= mem_we_ack;
 											state  			<= push_after_mem;
 										end if;
+							end if;
 										
 				when push_after_mem =>	if (adapt_we = '0') then
 											if (adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_we_ack /= '1' or mem_re_ack /= '0') then
@@ -138,6 +139,7 @@ begin
 											adapt_re_ack	<= mem_re_ack;
 											state			<= pop_after_mem;
 										end if;
+							end if;
 										
 				when pop_after_mem =>	if (adapt_re = '0') then
 											if (adapt_we /= '0' or adapt_top /= '0' or adapt_push /= '0' or mem_re_ack /= '1' or mem_we_ack /= '0') then
@@ -166,6 +168,7 @@ begin
 											adapt_re_ack	<= mem_re_ack;
 											state			<= top_after_mem;
 										end if;
+							end if;
 										
 				when top_after_mem =>	if (adapt_re = '0') then
 											if (adapt_we /= '0' or adapt_pop /= '0' or adapt_push /= '0' or mem_re_ack /= '1' or mem_we_ack /= '0') then
@@ -177,7 +180,7 @@ begin
 										end if;
 										
 				--INVALID STATE-----------------------------------------
-				when invalid =>			user_fsm_invalid_state_error <= '0'
+				when invalid =>			user_fsm_invalid_state_error <= '0';
 				
 				when others => 			state <= invalid;
 				
@@ -186,3 +189,6 @@ begin
 	end process;
 end architecture rtl;
 ------------------------------------------------------------------------
+--to do: -indulaskor alaphelyzetbe allito 
+--	 -invalidbol recover esten alaphelyzetbe allito resz
+--	 -pop eseten figyelje h ures e a stack es az empty flaget huzza fel 1-esbe
