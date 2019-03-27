@@ -107,7 +107,7 @@ begin
 											if (adapt_we /= '1' or adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
 											state <= invalid;
 										else
-											mem_data_in		<= adapt_data;
+											mem_data_out		<= adapt_data;
 											adapt_we_ack	<= mem_we_ack;
 											state  			<= push_after_mem;
 										end if;
@@ -135,7 +135,7 @@ begin
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_top /= '0' or adapt_push /= '0' or mem_we_ack /= '0') then
 											state <= invalid;
 										else
-											adapt_data		<= mem_data_out;
+											adapt_data		<= mem_data_in;
 											adapt_re_ack	<= mem_re_ack;
 											state			<= pop_after_mem;
 										end if;
@@ -164,7 +164,7 @@ begin
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_pop /= '0' or adapt_push /= '0' or mem_we_ack /= '0') then
 											state <= invalid;
 										else
-											adapt_data		<= mem_data_out;
+											adapt_data		<= mem_data_in;
 											adapt_re_ack	<= mem_re_ack;
 											state			<= top_after_mem;
 										end if;
