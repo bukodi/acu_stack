@@ -12,18 +12,18 @@ entity edac_protected_stack is
 	);
 
 	port (
-		adapt_push : in std_logic;
-		adapt_pop  : in std_logic;
-		adapt_top  : in std_logic;
-		adapt_re : in std_logic;
-		adapt_we : in std_logic;
+		adapt_push					 : in std_logic;
+		adapt_pop					 : in std_logic;
+		adapt_top					 : in std_logic;
+		adapt_re 					 : in std_logic;
+		adapt_we					 : in std_logic;
 		adapt_re_ack                 : out std_logic;
 		adapt_we_ack                 : out std_logic;
 		adapt_data                   : inout std_logic_vector(data_width - 1 downto 0);
 		clk                          : in std_logic;
 		as_reset_n                   : in std_logic;
 		recover_fsm_n                : in std_logic;
-		user_fsm_invalid_state_error : out std_logic;
+		user_fsm_invalid			 : out std_logic;
 		mem_data_in                  : in std_logic_vector(data_width - 1 downto 0);
 		mem_data_out                 : out std_logic_vector(data_width - 1 downto 0);
 		mem_re                       : out std_logic;
@@ -52,45 +52,57 @@ architecture rtl of edac_protected_stack is
 
 	-- Points to the last used address (eg. top of the stack)
 	signal stack_pointer : std_logic_vector(stack_size_log2 - 1 downto 0);
-	signal stack_empty   : std_logic;
 	signal state         : state_t;
 
 begin
 	L_USER_LOGIC : process (clk, as_reset_n)
+	
+	variable free_stack_space:	integer range 0 to stack_size_log2;
  
  
 
 	begin
 		if (as_reset_n = '0') then
-			--
+			stack_pointer <= (others => '0');
+			free_stack_space := stack_size_log2 - 1;
+			adapt_re_ack <= '0';
+			adapt_we_ack <= '0';
+			adapt_data <= (others => '0');
+			user_fsm_invalid <= '0';
+			mem_data_out <= (others <= '0');
+			mem_re <= '0';
+			mem_we <= '0';
+			mem_addr <= (others => '0');
+			state <= idle;
 		elsif (rising_edge(clk)) then
 			case state is
 				when idle => 			if (adapt_push = '1') then
 											-- check invalid state
 											if (adapt_we /= '1' or adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
-												state <= invalid;
+												state					<=	invalid;
 											else
-												if (stack_empty = '1') then
-													stack_pointer <= (others => '0');
-													stack_empty   <= '0';
+												if (free_stack_space = stack_size_log2 - 1) then
+													stack_pointer		<=	(others => '0');
 												else
 													stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
-												state <= push_before_mem;
+												free_stack_space		<=	free_stack_space - 1;
+												state					<=	push_before_mem;
 												end if;
 											end if;
 										elsif (adapt_pop = '1') then
 											-- check invalid state
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_push /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
-												state <= invalid;
+												state					<=	invalid;
 											else
-												state <= pop_before_mem;
+												free_stack_space		<=	free_stack_space + 1;
+												state					<=	pop_before_mem;
 											end if;
 										elsif (adapt_top = '1') then
 											-- check invalid state
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_push /= '0' or adapt_pop /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
-												state <= invalid;
+												state					<=	invalid;
 											else
-												state <= top_before_mem;
+												state					<=	top_before_mem;
 											end if;
 										end if;
 
@@ -107,7 +119,7 @@ begin
 											if (adapt_we /= '1' or adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0') then
 											state <= invalid;
 										else
-											mem_data_out		<= adapt_data;
+											mem_data_out	<= adapt_data;
 											adapt_we_ack	<= mem_we_ack;
 											state  			<= push_after_mem;
 										end if;
@@ -180,7 +192,7 @@ begin
 										end if;
 										
 				--INVALID STATE-----------------------------------------
-				when invalid =>			user_fsm_invalid_state_error <= '0';
+				when invalid =>			user_fsm_invalid <= '1';
 				
 				when others => 			state <= invalid;
 				
@@ -192,3 +204,4 @@ end architecture rtl;
 --to do: -indulaskor alaphelyzetbe allito 
 --	 -invalidbol recover esten alaphelyzetbe allito resz
 --	 -pop eseten figyelje h ures e a stack es az empty flaget huzza fel 1-esbe
+
