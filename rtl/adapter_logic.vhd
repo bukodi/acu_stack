@@ -5,7 +5,7 @@ use ieee.numeric_std.all;
 entity acu_mmio_stack_adapter is
 	generic (
 		metastable_filter_bypass_reset_error_flags_n:	boolean;
-		metastable_filter_bypass_acu:					boolean;
+		metastable_filter_bypass_acu:					boolean
 	);
 	
 	port (
@@ -19,7 +19,7 @@ entity acu_mmio_stack_adapter is
 		cs:							in	std_logic;
 		address_from_acu:			in	std_logic_vector (15 downto 0);
 		recover_fsm_n:				in	std_logic;
-		adapter_invalid:			out	std_logic,
+		adapter_invalid:			out	std_logic
 	);
 end entity acu_mmio_stack_adapter;
 ---------------------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ architecture rtl of acu_mmio_edac_protected_stack is
 
 --???
 	type state_t is (
-		
+		dummy_state
 	);
 	signal state: state_t;
 

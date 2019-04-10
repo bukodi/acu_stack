@@ -69,7 +69,7 @@ begin
 			adapt_we_ack <= '0';
 			adapt_data <= (others => '0');
 			user_fsm_invalid <= '0';
-			mem_data_out <= (others <= '0');
+			mem_data_out <= (others => '0');
 			mem_re <= '0';
 			mem_we <= '0';
 			mem_addr <= (others => '0');
@@ -85,7 +85,7 @@ begin
 													stack_pointer		<=	(others => '0');
 												else
 													stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
-												free_stack_space		<=	free_stack_space - 1;
+												free_stack_space		:=	free_stack_space - 1;
 												state					<=	push_before_mem;
 												end if;
 											end if;
@@ -94,7 +94,7 @@ begin
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_push /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 												state					<=	invalid;
 											else
-												free_stack_space		<=	free_stack_space + 1;
+												free_stack_space		:=	free_stack_space + 1;
 												state					<=	pop_before_mem;
 											end if;
 										elsif (adapt_top = '1') then
