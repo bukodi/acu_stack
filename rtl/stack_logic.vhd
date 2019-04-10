@@ -63,6 +63,8 @@ begin
 
 	begin
 		if (as_reset_n = '0') then
+           	report "Reset detected";
+
 			stack_pointer <= (others => '0');
 			free_stack_space := stack_size_log2 - 1;
 			adapt_re_ack <= '0';
@@ -75,20 +77,26 @@ begin
 			mem_addr <= (others => '0');
 			state <= idle;
 		elsif (rising_edge(clk)) then
+            report "clk rising edge, state = " & state_t'image(state);
 			case state is
-				when idle => 			if (adapt_push = '1') then
+				when idle => 			
+                					if (adapt_push = '1') then
+                                            report "adapt_push detected";
 											-- check invalid state
 											if (adapt_we /= '1' or adapt_re /= '0' or adapt_pop /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
 												state					<=	invalid;
 											else
 												if (free_stack_space = stack_size_log2 - 1) then
 													stack_pointer		<=	(others => '0');
+                                                   report "stack_pointer set to 0"; 
 												else
 													stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
 												free_stack_space		:=	free_stack_space - 1;
 												state					<=	push_before_mem;
+                                                   report "state set to push_before_mem"; 
 												end if;
 											end if;
+                                            report "after adapt_push processed, state = " & state_t'image(state);
 										elsif (adapt_pop = '1') then
 											-- check invalid state
 											if (adapt_re /= '1' or adapt_we /= '0' or adapt_push /= '0' or adapt_top /= '0' or mem_re_ack /= '0' or mem_we_ack /= '0') then
