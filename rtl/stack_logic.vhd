@@ -59,12 +59,15 @@ begin
 	L_USER_LOGIC : process (clk, as_reset_n)
 	
 	variable free_stack_space:	integer range 0 to stack_size_log2;
+    
+   	constant sp_all_zero : std_logic_vector(stack_pointer'range) := (others => '0');
+   	constant sp_all_one : std_logic_vector(stack_pointer'range) := (others => '1');
 
 	begin
 		if (as_reset_n = '0') then
            	report "Reset detected";
 
-			stack_pointer 		<= (others => '0');
+			stack_pointer 		<= sp_all_zero;
 			free_stack_space 	:= stack_size_log2 - 1;
             stack_is_empty 		<= '1';
 			adapt_re_ack 		<= '0';
@@ -78,11 +81,11 @@ begin
 			state 				<= idle;
             
 		elsif (rising_edge(clk)) then
-            report "clk rising edge, state = " & state_t'image(state);
+            report "clk rising edge, input state = " & state_t'image(state);
 			case state is
 				when idle => 			
 					if (adapt_push = '1') then
-						report "adapt_push detected";
+						report "CASE: idle && adapt_push detected";
 						-- check invalid state
 						if (adapt_we /= '1' or adapt_re /= '0' 
 							or adapt_pop /= '0' or adapt_top /= '0' 
@@ -90,19 +93,27 @@ begin
 						then
 							state <= invalid;
 						else
-							if (free_stack_space = stack_size_log2 - 1) then
+							if (stack_is_empty = '1') then
+                            	report "PROC: push when stack is empty";
+                                stack_is_empty 		<= '0';
 								stack_pointer		<=	(others => '0');
-                        		report "stack_pointer set to 0"; 
+                                mem_addr <= (others => '0');
+								state					<=	push_calc_addr;
+							elsif ( stack_pointer = sp_all_one ) then 
+                            	report "PROC: push when stack is full";
+								state					<=	invalid;
 							else
+                            	report "PROC: push and increment stack_pointer";
 								stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
-								free_stack_space		:=	free_stack_space - 1;
-								state					<=	push_before_mem;
-                                report "state set to push_before_mem"; 
+                                mem_addr <= std_logic_vector(unsigned(stack_pointer) + 1);
+								state					<=	push_calc_addr;
 							end if;
+                            mem_data_out <= adapt_data;
+                            adapt_we_ack <= '1';
 						end if;
-						report "after adapt_push processed, state = " & state_t'image(state);
 
 					elsif (adapt_pop = '1') then
+						report "CASE: idle && adapt_pop detected";
 						-- check invalid state
 						if (adapt_re /= '1' or adapt_we /= '0' 
                         	or adapt_push /= '0' or adapt_top /= '0' 
@@ -116,6 +127,7 @@ begin
                         
                         
 					elsif (adapt_top = '1') then
+						report "CASE: idle && adapt_top detected";
 						-- check invalid state
 						if (adapt_re /= '1' or adapt_we /= '0' 
                         	or adapt_push /= '0' or adapt_pop /= '0' 
@@ -125,29 +137,35 @@ begin
 						else
 							state <= top_before_mem;
 						end if;
+                    else
+						report "CASE: idle but none of adapt_push/pop/top detected";
 					end if; -- END OF when idle
 
 				--PUSH--------------------------------------------------
 				when push_calc_addr =>	
+					report "CASE: push_calc_addr";
                 	if (adapt_we /= '1' or adapt_re /= '0' 
                     	or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' 
                         or mem_re_ack /= '0' or mem_we_ack /= '0') 
 					then
 						state <= invalid;
 					else
-						mem_addr <= stack_pointer;
-						mem_we <= adapt_we;
+						mem_we <= '1';
 						state <= push_before_mem;
 					end if;
 										
 				when push_before_mem =>	
-                	if (mem_we_ack = '1') then
-						if (adapt_we /= '1' or adapt_re /= '0' 
-                        	or adapt_pop /= '0' or adapt_top /= '0' 
-                            or mem_re_ack /= '0') 
-						then
-							state <= invalid;
+					if (adapt_we /= '1' or adapt_re /= '0' 
+                       	or adapt_pop /= '0' or adapt_top /= '0' 
+						or mem_re_ack /= '0') 
+					then
+						state <= invalid;
+                    else 
+	                	if (mem_we_ack = '1') then
+							report "CASE: push_before_mem and mem readed data";
+							state <= idle;
 						else
+							report "CASE: push_before_mem and mem readed data";
 							mem_data_out	<= adapt_data;
 							adapt_we_ack	<= mem_we_ack;
 							state  			<= push_after_mem;
@@ -155,6 +173,7 @@ begin
 					end if;
 										
 				when push_after_mem =>	
+					report "CASE: push_after_mem";
                 	if (adapt_we = '0') then
 						if (adapt_re /= '0' 
                         or adapt_pop /= '0' or adapt_top /= '0' 
@@ -169,6 +188,7 @@ begin
 										
 				--POP---------------------------------------------------
 				when pop_calc_addr =>	
+					report "CASE: pop_calc_addr";
                 	if (adapt_re /= '1' or adapt_we /= '0' 
                 		or adapt_pop /= '1' or adapt_top /= '0' or adapt_push /= '0' 
                 		or mem_re_ack /= '0' or mem_we_ack /= '0') 
@@ -181,6 +201,7 @@ begin
 					end if;
 										
 				when pop_before_mem =>	
+					report "CASE: pop_before_mem";
                 	if (mem_re_ack = '1') then
 						if (adapt_re /= '1' or adapt_we /= '0' 
                         	or adapt_top /= '0' or adapt_push /= '0' 
@@ -195,6 +216,7 @@ begin
 					end if;
 										
 				when pop_after_mem =>	
+					report "CASE: pop_after_mem";
                 	if (adapt_re = '0') then
 						if (adapt_we /= '0' 
                     		or adapt_top /= '0' or adapt_push /= '0' 
@@ -210,6 +232,7 @@ begin
 										
 				--TOP---------------------------------------------------
 				when top_calc_addr =>	
+					report "CASE: top_calc_addr";
                 	if (adapt_re /= '1' or adapt_we /= '0' 
                     	or adapt_top /= '1' or adapt_pop /= '0' or adapt_push /= '0' 
                         or mem_re_ack /= '0' or mem_we_ack /= '0') 
@@ -222,6 +245,7 @@ begin
 					end if;
 										
 				when top_before_mem =>	
+					report "CASE: top_before_mem";
 	                if (mem_re_ack = '1') then
 						if (adapt_re /= '1' or adapt_we /= '0' 
         	            	or adapt_pop /= '0' or adapt_push /= '0' 
@@ -236,6 +260,7 @@ begin
 					end if;
 										
 				when top_after_mem =>	
+					report "CASE: top_after_mem";
                 	if (adapt_re = '0') then
 						if (adapt_we /= '0' 
                 	        or adapt_pop /= '0' or adapt_push /= '0' 
@@ -250,13 +275,15 @@ begin
 										
 				--INVALID STATE-----------------------------------------
 				when invalid =>			
+					report "CASE: invalid";
                 	user_fsm_invalid <= '1';
 				
 				when others =>
+					report "CASE: when others (This should not happen)";
                 	state <= invalid;
 				
 			end case;
-		end if; -- as_reset_n = '0' or rising_edge(clk)
+		end if;
 	end process;
 end architecture rtl;
 ------------------------------------------------------------------------

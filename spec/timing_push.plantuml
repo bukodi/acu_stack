@@ -1,0 +1,59 @@
+@startuml
+robust "adapt_we" as AWE
+robust "adapt_we_ack" as AWEACK
+robust "adapt_push" as AP
+concise "state" as ST
+robust "mem_we" as MWE
+robust "mem_we_ack" as MWEACK
+
+scale 100 as 150 pixels
+
+
+@0
+AWE is L
+AWEACK is L
+AP is L
+ST is idle
+MWE is L
+MWEACK is L
+
+@30
+AWE is H
+
+@50
+AP is H
+AP -> ST@+50 : Push operation initiated
+
+@100
+ST is push_calc_addr
+
+@200
+MWE is H
+ST is push_before_mem
+
+@350
+MWEACK is H
+MWEACK -> ST@+50 : Mem read the data
+
+@400
+ST is push_after_mem
+AWEACK is H
+AWEACK -> AWE@+50 : Push operation completed
+AWEACK -> AP@+50 : Push operation completed
+
+@450
+AWE is L
+AP is L
+
+@500
+AWEACK is L
+ST is idle
+
+@MWEACK
+@200 <-> @+150 : {UL wait for MEM}
+
+@AP
+@50 <-> @400 : {Adapt wait for UL}
+
+
+@enduml
