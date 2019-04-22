@@ -1,6 +1,7 @@
 -- Testbench for ACU stack
 library IEEE;
 use IEEE.std_logic_1164.all;
+use edac_protected_ram_pkg.all;
 
 -- entity declaration for your testbench.
 entity testbench is
@@ -19,7 +20,7 @@ architecture tb of testbench is
 			addr_top        : integer range 0 to 16
 		);
 
-		port (
+		port ( 
 			adapt_push : in std_logic;
 			adapt_pop  : in std_logic;
 			adapt_top  : in std_logic;
@@ -44,6 +45,44 @@ architecture tb of testbench is
 		);
 	end component edac_protected_stack;
     
+    ---------------------------------------------------------------------------------------------------
+	component edac_protected_ram is
+	generic (
+		address_width:						integer range 2 to 12;
+		data_width:							integer range 2 to 64;
+		edac_latency:						integer range 4 to 10;
+		prot_bram_registered_in:			boolean;
+		prot_bram_registered_out:			boolean;
+		prot_bram_scrubber_present:			boolean;
+		prot_bram_scrb_prescaler_width:		integer range 1 to 18;
+		prot_bram_scrb_timer_width:			integer range 1 to 24;
+		init_from_file:						boolean;
+		initfile_path:						string;
+		initfile_format:					string
+	);
+	
+	port (
+		clk:											in	std_logic;
+		as_reset_n:										in	std_logic;
+		reset_error_flags_n:							in	std_logic;
+		uncorrectable_error:							out	std_logic;
+		correctable_error:								out	std_logic;
+		we:												in	std_logic;
+		we_ack:											out	std_logic;
+		re:												in	std_logic;
+		re_ack:											out	std_logic;
+		write_address:									in	std_logic_vector (address_width-1 downto 0);
+		read_address:									in	std_logic_vector (address_width-1 downto 0);
+		data_in:										in	std_logic_vector (data_width-1 downto 0);
+		data_out:										out	std_logic_vector (data_width-1 downto 0);
+		error_injection:								in	std_logic_vector (1 downto 0);
+		force_scrubbing:								in	std_logic;
+		scrubber_invalid_state_error:					out	std_logic;
+		scrubber_recover_fsm_n:							in	std_logic;
+		dbg_scrubber_invalid_state_error_injection:		in	std_logic
+	);
+	end component edac_protected_ram;
+
     
 	--declare inputs and outputs. Inputs initialized to zero.
 	signal adapt_push                   : std_logic := '0';
@@ -51,7 +90,7 @@ architecture tb of testbench is
 	signal adapt_top                    : std_logic := '0';
 	signal adapt_re                     : std_logic := '0';
 	signal adapt_we                     : std_logic := '0';
-	signal adapt_re_ack                 : std_logic := '1';
+	signal adapt_re_ack                 : std_logic := '0';
 	signal adapt_we_ack                 : std_logic;
 	signal adapt_data                   : std_logic_vector(4 - 1 downto 0);
 	signal clk                          : std_logic := '0';
@@ -65,9 +104,22 @@ architecture tb of testbench is
 	signal mem_re_ack                   : std_logic := '0';
 	signal mem_we_ack                   : std_logic := '0';
 	signal mem_addr                     : std_logic_vector(4 - 1 downto 0);
+    
+    signal mem_uncorrectable_error		: std_logic;
+	signal mem_correctable_error		: std_logic;
+	signal mem_scrubber_invalid_state_error: std_logic;
+
+	signal mem_error_injection: std_logic_vector (1 downto 0) := (others => '0');
+	signal mem_force_scrubbing:	std_logic := '0';
+	signal mem_scrubber_recover_fsm_n: std_logic := '1';
+	signal mem_dbg_scrubber_invalid_state_error_injection: std_logic := '0';
+
+
 
 -- define the period of clock here.
 	constant CLK_PERIOD : time := 10 ns;
+    constant DATA_WIDTH : integer := 4;
+    constant ADDR_WIDTH : integer := 4;
 
 begin
 
@@ -84,23 +136,25 @@ begin
 			push_process : process
 			begin
 				as_reset_n <= '0';
-				wait for CLK_PERIOD/2*5;
+				wait for CLK_PERIOD/10;
 				as_reset_n <= '1';
-
-				wait for CLK_PERIOD/2*5;
+				wait for CLK_PERIOD;
 				adapt_we <= '1';
-				wait for CLK_PERIOD/2*5;
+				wait for CLK_PERIOD/10;
 				adapt_push <= '1';
-				wait for CLK_PERIOD/2*6;
+                report "adapt_we_ack = " & std_logic'image(adapt_we_ack);
+				wait for CLK_PERIOD/10*19;
+                report "adapt_we_ack = " & std_logic'image(adapt_we_ack);
 				adapt_push <= '0';
+				adapt_we <= '0';
 				wait for CLK_PERIOD*100;
 			end process;
 
-	-- instantiate the unit under test (uut)
-	UUT : edac_protected_stack
+	-- instantiate the design under test (DUT)
+	DUT : edac_protected_stack
 		generic map(
-		data_width      => 4, 
-		stack_size_log2 => 4, 
+		data_width      => DATA_WIDTH, 
+		stack_size_log2 => ADDR_WIDTH, 
 		addr_push       => 1, 
 		addr_pop        => 2, 
 		addr_top        => 3 
@@ -125,6 +179,42 @@ begin
 			mem_re_ack                   => mem_re_ack, 
 			mem_we_ack                   => mem_we_ack, 
 			mem_addr                     => mem_addr
+		); 
+
+	-- instantiate edac protected memory 
+	MEM : edac_protected_ram
+		generic map(
+		address_width						=> ADDR_WIDTH,
+		data_width							=> DATA_WIDTH,
+		edac_latency						=> 4,
+		prot_bram_registered_in				=> true,
+		prot_bram_registered_out			=> true,
+		prot_bram_scrubber_present			=> false,
+		prot_bram_scrb_prescaler_width		=> 1,
+		prot_bram_scrb_timer_width			=> 1, 
+		init_from_file						=> false,
+		initfile_path						=> "",
+		initfile_format						=> ""
+		)
+		port map(
+			clk  => clk,
+			as_reset_n => as_reset_n,
+			reset_error_flags_n => recover_fsm_n,
+			uncorrectable_error => mem_uncorrectable_error,
+			correctable_error => mem_correctable_error,
+			we => mem_we,
+			we_ack => mem_we_ack, 
+			re => mem_re,
+			re_ack => mem_re_ack, 
+			write_address => mem_addr,
+			read_address => mem_addr, 
+			data_in => mem_data_in,
+			data_out => mem_data_out,
+			error_injection => mem_error_injection,
+		 	force_scrubbing => mem_force_scrubbing,
+		 	scrubber_invalid_state_error => mem_scrubber_invalid_state_error,
+		 	scrubber_recover_fsm_n => mem_scrubber_recover_fsm_n,
+			dbg_scrubber_invalid_state_error_injection => mem_dbg_scrubber_invalid_state_error_injection
 		); 
 
 end architecture tb;

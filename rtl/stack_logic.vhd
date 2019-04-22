@@ -70,8 +70,8 @@ begin
 			stack_pointer 		<= sp_all_zero;
 			free_stack_space 	:= stack_size_log2 - 1;
             stack_is_empty 		<= '1';
-			adapt_re_ack 		<= '0';
-			adapt_we_ack 		<= '0';
+			adapt_re_ack 		<= '1';
+			adapt_we_ack 		<= '1';
 			adapt_data 			<= (others => '0');
 			user_fsm_invalid 	<= '0';
 			mem_data_out 		<= (others => '0');
@@ -84,12 +84,14 @@ begin
             report "clk rising edge, input state = " & state_t'image(state);
 			case state is
 				when idle => 			
+                    adapt_we_ack <= '1';
+                    adapt_re_ack <= '1';
 					if (adapt_push = '1') then
 						report "CASE: idle && adapt_push detected";
 						-- check invalid state
 						if (adapt_we /= '1' or adapt_re /= '0' 
 							or adapt_pop /= '0' or adapt_top /= '0' 
-							or mem_re_ack /= '0' or mem_we_ack /= '0') 
+							or mem_re_ack /= '1' or mem_we_ack /= '1') 
 						then
 							state <= invalid;
 						else
@@ -98,6 +100,8 @@ begin
                                 stack_is_empty 		<= '0';
 								stack_pointer		<=	(others => '0');
                                 mem_addr <= (others => '0');
+								mem_data_out <= adapt_data;
+	                            adapt_we_ack <= '0';
 								state					<=	push_calc_addr;
 							elsif ( stack_pointer = sp_all_one ) then 
                             	report "PROC: push when stack is full";
@@ -106,10 +110,10 @@ begin
                             	report "PROC: push and increment stack_pointer";
 								stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
                                 mem_addr <= std_logic_vector(unsigned(stack_pointer) + 1);
+                            	mem_data_out <= adapt_data;
+	                            adapt_we_ack <= '0';
 								state					<=	push_calc_addr;
 							end if;
-                            mem_data_out <= adapt_data;
-                            adapt_we_ack <= '1';
 						end if;
 
 					elsif (adapt_pop = '1') then
@@ -146,7 +150,7 @@ begin
 					report "CASE: push_calc_addr";
                 	if (adapt_we /= '1' or adapt_re /= '0' 
                     	or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' 
-                        or mem_re_ack /= '0' or mem_we_ack /= '0') 
+                        or mem_re_ack /= '1' or mem_we_ack /= '1') 
 					then
 						state <= invalid;
 					else
@@ -155,36 +159,37 @@ begin
 					end if;
 										
 				when push_before_mem =>	
-					if (adapt_we /= '1' or adapt_re /= '0' 
+					if (adapt_re /= '0' 
                        	or adapt_pop /= '0' or adapt_top /= '0' 
-						or mem_re_ack /= '0') 
+						or mem_re_ack /= '1') 
 					then
 						state <= invalid;
                     else 
-	                	if (mem_we_ack = '1') then
-							report "CASE: push_before_mem and mem readed data";
-							state <= idle;
+	                	if (mem_we_ack = '0') then
+							report "CASE: push_before_mem and mem_we_ack is LOW";
+                            mem_we <= '0';
+							state <= push_after_mem;                            
 						else
-							report "CASE: push_before_mem and mem readed data";
-							mem_data_out	<= adapt_data;
-							adapt_we_ack	<= mem_we_ack;
-							state  			<= push_after_mem;
+							report "CASE:  push_before_mem and waiting for mem_we_ack LOW";
 						end if;
 					end if;
 										
 				when push_after_mem =>	
 					report "CASE: push_after_mem";
-                	if (adapt_we = '0') then
-						if (adapt_re /= '0' 
+					if (adapt_re /= '0' 
                         or adapt_pop /= '0' or adapt_top /= '0' 
-                        or mem_we_ack /= '1' or mem_re_ack /= '0') 
+                        or mem_we /= '0' or mem_re_ack /= '1') 
 					then
 						state <= invalid;
 					else
-						mem_we	<= adapt_we;
-						state	<= idle;
+	                	if (mem_we_ack = '1') then
+							report "CASE: push_before_mem and mem_we_ack is LOW";
+							adapt_we_ack <= '1';
+							state	<= idle;
+						else
+							report "CASE:  push_before_mem and waiting for mem_we_ack HIGH";
+						end if;
 					end if;
-				end if;
 										
 				--POP---------------------------------------------------
 				when pop_calc_addr =>	
