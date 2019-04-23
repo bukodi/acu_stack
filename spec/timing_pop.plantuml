@@ -1,0 +1,83 @@
+' Use this source on this site:
+' https://www.planttext.com/
+@startuml
+
+Title POP operation timing
+
+legend
+lower case: UL inputs ( controlled by adapter or mem )
+UPPER case: UL outputs ( controlled by UL )
+end legend
+
+robust "adapt_pop" as AP
+robust "adapt_re" as ARE
+robust "ADAPT_RE_ACK" as AREACK
+concise "STATE" as ST
+robust "MEM_RE" as MRE
+robust "mem_re_ack" as MREACK
+
+scale 100 as 150 pixels
+
+
+@0
+ARE is L
+AREACK is L
+AP is L
+ST is idle
+MRE is L
+MREACK is L
+
+@1
+AREACK is H
+MREACK is H
+
+@30
+ARE is H
+
+@50
+AP is H
+AP -> ST@+50 : Pop operation initiated
+
+@100
+ST is pop_calc_addr
+AREACK is L
+ST -> AREACK
+AREACK -> ARE@+20 
+AREACK -> AP@+20 
+
+@120
+ARE is L
+AP is L
+
+@200
+MRE is H
+ST is pop_before_mem
+ST -> MRE
+
+@220
+MREACK is L
+MREACK -> ST@+80
+
+@300
+ST is pop_after_mem
+MRE is L
+ST -> MRE
+
+@380
+MREACK is H
+MREACK -> ST@+20
+
+@400
+ST is idle
+AREACK is H
+ST -> AREACK
+
+
+@MRE
+@200 <-> @380 : < UL wait for MEM >
+
+@AP
+@50 <-> @400 : < Adapt wait for UL >
+
+
+@enduml
