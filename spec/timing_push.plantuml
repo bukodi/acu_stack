@@ -1,9 +1,19 @@
+' Use this source on this site:
+' https://www.planttext.com/
 @startuml
-robust "adapt_we" as AWE
-robust "adapt_we_ack" as AWEACK
+
+Title PUSH operation timing
+
+legend
+lower case: UL inputs ( controlled by adapter or mem )
+UPPER case: UL outputs ( controlled by UL )
+end legend
+
 robust "adapt_push" as AP
-concise "state" as ST
-robust "mem_we" as MWE
+robust "adapt_we" as AWE
+robust "ADAPT_WE_ACK" as AWEACK
+concise "STATE" as ST
+robust "MEM_WE" as MWE
 robust "mem_we_ack" as MWEACK
 
 scale 100 as 150 pixels
@@ -17,6 +27,10 @@ ST is idle
 MWE is L
 MWEACK is L
 
+@1
+AWEACK is H
+MWEACK is H
+
 @30
 AWE is H
 
@@ -26,34 +40,44 @@ AP -> ST@+50 : Push operation initiated
 
 @100
 ST is push_calc_addr
+AWEACK is L
+ST -> AWEACK
+AWEACK -> AWE@+20 
+AWEACK -> AP@+20 
+
+@120
+AWE is L
+AP is L
 
 @200
 MWE is H
 ST is push_before_mem
+ST -> MWE
 
-@350
+@220
+MWEACK is L
+MWEACK -> ST@+80
+
+@300
+ST is push_after_mem
+MWE is L
+ST -> MWE
+
+@380
 MWEACK is H
-MWEACK -> ST@+50 : Mem read the data
+MWEACK -> ST@+20
 
 @400
-ST is push_after_mem
-AWEACK is H
-AWEACK -> AWE@+50 : Push operation completed
-AWEACK -> AP@+50 : Push operation completed
-
-@450
-AWE is L
-AP is L
-
-@500
-AWEACK is L
 ST is idle
+AWEACK is H
+ST -> AWEACK
 
-@MWEACK
-@200 <-> @+150 : {UL wait for MEM}
+
+@MWE
+@200 <-> @380 : < UL wait for MEM >
 
 @AP
-@50 <-> @400 : {Adapt wait for UL}
+@50 <-> @400 : < Adapt wait for UL >
 
 
 @enduml
