@@ -65,38 +65,29 @@ begin
 							data_2_dmem								=> acu_data
 						);
 	
-	L_ACU_MMIO_UART_TRANSCEIVER:	entity work.acu_mmio_uart_transceiver(rtl)
+
+						L_ACU_MMIO_UART_TRANSCEIVER:	entity work.acu_mmio_uart_transceiver(rtl)
 										generic map (
-											metastable_filter_bypass_recover_fsm_n	=> true,
-											metastable_filter_bypass_acu			=> false,
-											generate_intr_on_uart_reception			=> true,
-											clk_pulses_per_baud						=> 100,
-											transmit_receiver_error_codes			=> false,
-											data_bits								=> 8,
-											odd_parity_on							=> true,
-											address_ready_2_read					=> 3,
-											address_ready_2_write					=> 4,
-											address_data							=> 5,
-											address_error_code						=> 6,
-											address_recover_transceiver				=> 7
+											metastable_filter_bypass_reset_error_flags_n	=> true,
+											metastable_filter_bypass_acu			=> true,
+											data_width								=> 4
 										)
 										
 										port map (
 											clk							=> clk_uart,
 											raw_reset_n					=> raw_reset_n,
-											read_strobe_from_acu		=> acu_read_strobe,
+
 											write_strobe_from_acu		=> acu_write_strobe,
-											ready_2_acu					=> uart_ready,
-											address_from_acu			=> acu_address,
+											read_strobe_from_acu		=> acu_read_strobe,
+											s_data_2_acu					=> uart_data,
 											data_from_acu				=> acu_data,
-											data_2_acu					=> uart_data,
-											intr_rqst					=> uart_intr_rqst,
-											intr_ack					=> acu_intr_ack,
-											rx							=> rx,
-											tx							=> tx,
-											invalid_state_error			=> open,
+											s_ready_2_acu					=> uart_ready,
+											address_from_acu			=> acu_address,
+
 											recover_fsm_n				=> '1',
 											recover_fsm_n_ack			=> open
+											user_fsm_invalid			=> open
+
 										);
 										
 	L_TEST_SEQUENCE: process
