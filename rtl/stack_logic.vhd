@@ -4,11 +4,12 @@ use ieee.numeric_std.all;
 ------------------------------------------------------------------------
 entity edac_protected_stack is
 	generic (
-		data_width      : integer range 0 to 16;
-		stack_size_log2 : integer range 0 to 16;
-		addr_push       : integer range 0 to 16;
-		addr_pop        : integer range 0 to 16;
-		addr_top        : integer range 0 to 16
+		metastable_filter_bypass_recover_fsm_n:			boolean;
+		data_width:		 								integer range 0 to 16;
+		stack_size_log2: 								integer range 0 to 16;
+		addr_push:		 								integer range 0 to 16;
+		addr_pop: 										integer range 0 to 16;
+		addr_top:	 									integer range 0 to 16
 	);
 
 	port (
@@ -21,8 +22,9 @@ entity edac_protected_stack is
 		adapt_we_ack                 : out std_logic;
 		adapt_data                   : inout std_logic_vector(data_width - 1 downto 0);
 		clk                          : in std_logic;
-		as_reset_n                   : in std_logic;
+		raw_reset_n                  : in std_logic;
 		recover_fsm_n                : in std_logic;
+		recover_fsm_n_ack			 : out std_logic;
 		user_fsm_invalid			 : out std_logic;
 		mem_data_in                  : in std_logic_vector(data_width - 1 downto 0);
 		mem_data_out                 : out std_logic_vector(data_width - 1 downto 0);
@@ -39,9 +41,7 @@ architecture rtl of edac_protected_stack is
 	signal ff_reset_n:						std_logic;
 	signal as_reset_n:						std_logic;
 	
-	signal ff_reset_error_flags_n:			std_logic;
-	signal reset_error_flags_n_filtered:	std_logic;
-	signal reset_error_flags_n_internal:	std_logic;
+	
 	signal ff_recover_fsm_n:				std_logic;
 	signal recover_fsm_n_filtered:			std_logic;
 	signal recover_fsm_n_internal:			std_logic;
@@ -81,13 +81,9 @@ begin
 	L_METASTBLE_FILTER_BLOCK: process ( clk, as_reset_n )
 	begin
 		if ( as_reset_n = '0' ) then
-			ff_reset_error_flags_n <= '1';
-			reset_error_flags_n_filtered <= '1';
 			ff_recover_fsm_n <= '1';
 			recover_fsm_n_filtered <= '1';
 		elsif ( rising_edge(clk) ) then
-			ff_reset_error_flags_n <= reset_error_flags_n;
-			reset_error_flags_n_filtered <= ff_reset_error_flags_n;
 			ff_recover_fsm_n <= recover_fsm_n;
 			recover_fsm_n_filtered <= ff_recover_fsm_n;
 		end if;
@@ -96,7 +92,6 @@ begin
 	
 	L_METASTABLE_FILTER_BYPASS: block
 	begin
-		reset_error_flags_n_internal <= reset_error_flags_n when metastable_filter_bypass_reset_error_flags_n = true else reset_error_flags_n_filtered;
 		recover_fsm_n_internal <= recover_fsm_n when metastable_filter_bypass_recover_fsm_n = true else recover_fsm_n_filtered;
 	end block;
 	
@@ -367,5 +362,7 @@ begin
 			end case;
 		end if;
 	end process;
+
+	
 end architecture rtl;
 ------------------------------------------------------------------------
