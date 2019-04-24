@@ -18,7 +18,6 @@ entity acu_mmio_stack_adapter is
 		s_data_2_acu:				out	std_logic_vector (15 downto 0);
 		data_from_acu:				in	std_logic_vector (15 downto 0);
 		s_ready_2_acu:				out	std_logic;
-		cs:							in	std_logic;
 		address_from_acu:			in	std_logic_vector (15 downto 0);
 		
 		recover_fsm_n:				in	std_logic;
@@ -53,6 +52,7 @@ architecture rtl of acu_mmio_edac_protected_stack is
 	signal reset_error_flags_n_filtered:	std_logic;
 	signal reset_error_flags_n_internal:	std_logic;
 	
+	signal cs:								std_logic;
 
 	type state_t is (
 		idle,
