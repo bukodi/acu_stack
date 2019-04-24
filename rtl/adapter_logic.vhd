@@ -24,14 +24,6 @@ entity acu_mmio_stack_adapter is
 		recover_fsm_n_ack:			out std_logic;
 		user_fsm_invalid:			out std_logic;
 		
-		adapt_push					 : out std_logic;
-		adapt_pop					 : out std_logic;
-		adapt_top					 : out std_logic;
-		adapt_re 					 : out std_logic;
-		adapt_we					 : out std_logic;
-		adapt_re_ack                 : in std_logic;
-		adapt_we_ack                 : in std_logic;
-		adapt_data                   : inout std_logic_vector(data_width - 1 downto 0);
 	);
 end entity acu_mmio_stack_adapter;
 ---------------------------------------------------------------------------------------------------
@@ -53,6 +45,15 @@ architecture rtl of acu_mmio_edac_protected_stack is
 	signal reset_error_flags_n_internal:	std_logic;
 	
 	signal cs:								std_logic;
+	
+	signal adapt_push:					 std_logic;
+	signal adapt_pop:					 std_logic;
+	signal adapt_top:					 std_logic;
+	signal adapt_re: 					 std_logic;
+	signal adapt_we:					 std_logic;
+	signal adapt_re_ack:                 std_logic;
+	signal adapt_we_ack:                 std_logic;
+	signal adapt_data:                   std_logic_vector(data_width - 1 downto 0);
 
 	type state_t is (
 		idle,
