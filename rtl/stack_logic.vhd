@@ -362,6 +362,43 @@ begin
 			end case;
 		end if;
 	end process;
+	
+	
+	L_EDAC_MEMORY_WRAPPER:	entity work.edac_protected_ram()
+								generic map (
+									address_width 						=> address_width,
+									data_width 							=> data_width,
+									edac_latency						=> open
+									prot_bram_registered_in				=> open
+									prot_bram_registered_out			=> open
+									prot_bram_scrubber_present			=> open
+									prot_bram_scrb_prescaler_width		=> open
+									prot_bram_scrb_timer_width			=> open
+									init_from_file						=> open
+									initfile_path						=> "",
+									initfile_format						=> ""
+								)
+									
+								port map (
+									clk												=> clk,
+									as_reset_n										=> as_reset_n,
+									reset_error_flags_n								=> recover_fsm_n,
+									uncorrectable_error								=> open,
+									correctable_error								=> open,
+									we												=> mem_we,
+									we_ack											=> mem_we_ack, 
+									re												=> mem_re,
+									re_ack											=> mem_re_ack, 
+									write_address									=> mem_addr,
+									read_address									=> mem_addr, 
+									data_in											=> mem_data_out,
+									data_out 										=> mem_data_in,
+									error_injection									=> open
+								 	force_scrubbing 								=> open
+								 	scrubber_invalid_state_error 					=> open
+								 	scrubber_recover_fsm_n			 				=> open
+									dbg_scrubber_invalid_state_error_injection		=> open
+								);
 
 	
 end architecture rtl;
