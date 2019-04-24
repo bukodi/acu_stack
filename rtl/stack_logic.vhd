@@ -36,6 +36,16 @@ end entity edac_protected_stack;
 ------------------------------------------------------------------------
 architecture rtl of edac_protected_stack is
 
+	signal ff_reset_n:						std_logic;
+	signal as_reset_n:						std_logic;
+	
+	signal ff_reset_error_flags_n:			std_logic;
+	signal reset_error_flags_n_filtered:	std_logic;
+	signal reset_error_flags_n_internal:	std_logic;
+	signal ff_recover_fsm_n:				std_logic;
+	signal recover_fsm_n_filtered:			std_logic;
+	signal recover_fsm_n_internal:			std_logic;
+	
 	type state_t is(
 		idle, 
 		push_calc_addr, 
@@ -54,8 +64,49 @@ architecture rtl of edac_protected_stack is
 	signal stack_pointer : std_logic_vector(stack_size_log2 - 1 downto 0);
 	signal state         : state_t;
 	signal stack_is_empty    : std_logic;
+	
+	
+	L_RESET_CIRCUITRY:	process ( clk, raw_reset_n )
+	begin
+		if ( raw_reset_n = '0' ) then
+			ff_reset_n <= '0';
+			as_reset_n <= '0';
+		elsif ( rising_edge(clk) ) then
+			ff_reset_n <= '1';
+			as_reset_n <= ff_reset_n;
+		end if;
+	end process;
+	
+	
+	L_METASTBLE_FILTER_BLOCK: process ( clk, as_reset_n )
+	begin
+		if ( as_reset_n = '0' ) then
+			ff_reset_error_flags_n <= '1';
+			reset_error_flags_n_filtered <= '1';
+			ff_recover_fsm_n <= '1';
+			recover_fsm_n_filtered <= '1';
+		elsif ( rising_edge(clk) ) then
+			ff_reset_error_flags_n <= reset_error_flags_n;
+			reset_error_flags_n_filtered <= ff_reset_error_flags_n;
+			ff_recover_fsm_n <= recover_fsm_n;
+			recover_fsm_n_filtered <= ff_recover_fsm_n;
+		end if;
+	end process;
+	
+	
+	L_METASTABLE_FILTER_BYPASS: block
+	begin
+		reset_error_flags_n_internal <= reset_error_flags_n when metastable_filter_bypass_reset_error_flags_n = true else reset_error_flags_n_filtered;
+		recover_fsm_n_internal <= recover_fsm_n when metastable_filter_bypass_recover_fsm_n = true else recover_fsm_n_filtered;
+	end block;
+	
+	
+	L_METASTABLE_FILTER_ACKNOWLEDGE: block
+	begin
+		recover_fsm_n_ack <= recover_fsm_n_internal;
+	end block;
 
-begin
+	
 	L_USER_LOGIC : process (clk, as_reset_n)
 	
 	variable free_stack_space:	integer range 0 to stack_size_log2;
@@ -317,7 +368,3 @@ begin
 	end process;
 end architecture rtl;
 ------------------------------------------------------------------------
---to do: -indulaskor alaphelyzetbe allito 
---	 -invalidbol recover esten alaphelyzetbe allito resz
---	 -pop eseten figyelje h ures e a stack es az empty flaget huzza fel 1-esbe
-
