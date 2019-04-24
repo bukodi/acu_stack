@@ -7,6 +7,9 @@ entity acu_mmio_stack_adapter is
 		metastable_filter_bypass_reset_error_flags_n:	boolean;
 		metastable_filter_bypass_acu:					boolean;
 		data_width:										integer range 0 to 16;
+		adress_pop:										integer range 0 to 16;
+		adress_top:										integer range 0 to 16;
+		adress_push:									integer range 0 to 16;
 	);
 	
 	port (
