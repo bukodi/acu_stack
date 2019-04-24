@@ -43,7 +43,12 @@ architecture rtl of acu_mmio_edac_protected_stack is
 
 --???
 	type state_t is (
-		dummy_state
+		idle,
+		pop,
+		top,
+		push,
+		deassert_strobes,
+		error
 	);
 	signal state: state_t;
 
@@ -90,12 +95,85 @@ begin
 	
 	L_LOCAL_ADDRESS_DECODER: block
 	begin
-		cs <= '1' when (unsigned(address_from_acu) = address_push or unsigned(address_from_acu) = address_top
-		 or unsigned(address_from_acu) = address_pop or unsigned(address_from_acu) = address_test_error or unsigned(address_from_acu) = address_state) else '0';
+		cs <= '1' when (unsigned(address_from_acu) = address_push or unsigned(address_from_acu) = address_top or unsigned(address_from_acu) = address_pop else '0';
 		ready_2_acu <= s_ready_2_acu when cs = '1' else '0';
 		data_2_acu(data_width-1 downto 0) <= s_data_2_acu when cs = '1' else (others => '0');
 		data_2_acu(15 downto data_width) <= (others => '0');
 	end block;
+	
+	L_ADAPTER_LOGIC: process ( clk, as_reset_n )
+	begin
+		if ( as_reset_n = '0' ) then
+			state <= idle;
+			s_ready_2_acu <= '0';
+			s_data_2_acu <= (others => '0');
+			pop <= '0';
+			top <= '0';
+			push <= '0';
+			data_2_stack <= (others => '0');
+			invalid_state_error <= '0';
+		elsif ( rising_edge(clk) ) then
+			case state is
+				when idle	=>	s_ready_2_acu <= '1';
+								
+								if ( write_strobe_from_acu_internal = '1' and cs = '1' ) then
+									if ( unsigned(address_from_acu) = address_push ) then
+										s_ready_2_acu <= '0';
+										state <= push;
+									else
+										s_ready_2_acu <= '0';
+										state <= deassert_strobes;
+									end if;
+								end if;
+								
+								if ( read_strobe_from_acu_internal = '1' and cs = '1' ) then
+								
+									s_ready_2_acu <= '0';
+									if ( unsigned(address_from_acu) = address_top ) then
+										state <= top;
+									elsif ( unsigned(address_from_acu) = address_pop ) then
+										state <= pop;
+									else
+										state <= wait_for_deassert_strobes;
+									end if;	
+								end if;
+				
+				----------------------------------------------------------------------------------------------
+								
+				when pop	=>	pop <= '1';
+				
+				----------------------------------------------------------------------------------------------
+								
+				when top_1	=>	top <= '1';
+				
+				----------------------------------------------------------------------------------------------
+								
+				when push_1	=>	data_2_stack <= data_from_acu(data_width-1 downto 0);
+								push <= '1';
+				
+				----------------------------------------------------------------------------------------------
+											
+				when deassert_strobes	=>	if ( read_strobe_from_acu_internal = '0' and write_strobe_from_acu_internal = '0') then
+												state <= idle;
+											end if;
+													
+				----------------------------------------------------------------------------------------------
+				
+				when invalid	=>	return_state <= idle;
+									s_ready_2_acu <= '0';
+									s_data_2_acu <= (others => '0');
+									pop <= '0';
+									top <= '0';
+									push <= '0';
+									data_2_stack <= (others => '0');
+								
+				when others	=>	invalid_state_error <= '1';
+								state <= invalid;
+			end case;
+		end if;
+	end process;
+	
+	
 	
 end architecture rtl;
 ---------------------------------------------------------------------------------------------------
