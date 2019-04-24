@@ -53,9 +53,9 @@ architecture rtl of acu_mmio_edac_protected_stack is
 
 	type state_t is (
 		idle,
-		pop_1,pop_2,pop_3,
-		top_1,top_2,top_3,
-		push_1,push_2,push_3,
+		pop_1,pop_2,pop_3,pop_4,
+		top_1,top_2,top_3,top_4,
+		push_1,push_2,push_3,push_4,
 		deassert_strobes,
 		error
 	);
@@ -213,6 +213,26 @@ begin
 			end case;
 		end if;
 	end process;
+	
+	
+	L_USER_LOGIC:	entity work.user_logic(rtl)
+								generic map (
+									address_width			=> address_width,
+									data_width				=> data_width,
+								)
+								
+								port map (
+									clk						=> clk,
+									raw_reset_n				=> raw_reset_n,
+									adapt_push				=> adapt_push,
+									adapt_pop				=> adapt_pop,
+									adap_top				=> adapt_top,
+									adapt_re 				=> adapt_re,
+									adapt_we				=> adapt_we,
+									adapt_re_ack            => adapt_re_ack,
+									adapt_we_ack            => adapt_we_ack,
+									adapt_data				=> adapt_data
+								);
 	
 	
 	
