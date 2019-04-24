@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 entity acu_mmio_stack_adapter is
 	generic (
 		metastable_filter_bypass_reset_error_flags_n:	boolean;
-		metastable_filter_bypass_acu:					boolean
+		metastable_filter_bypass_acu:					boolean;
+		data_width:										integer range 0 to 16;
 	);
 	
 	port (
@@ -20,6 +21,15 @@ entity acu_mmio_stack_adapter is
 		address_from_acu:			in	std_logic_vector (15 downto 0);
 		recover_fsm_n:				in	std_logic;
 		adapter_invalid:			out	std_logic
+		
+		adapt_push					 : out std_logic;
+		adapt_pop					 : out std_logic;
+		adapt_top					 : out std_logic;
+		adapt_re 					 : out std_logic;
+		adapt_we					 : out std_logic;
+		adapt_re_ack                 : in std_logic;
+		adapt_we_ack                 : in std_logic;
+		adapt_data                   : inout std_logic_vector(data_width - 1 downto 0);
 	);
 end entity acu_mmio_stack_adapter;
 ---------------------------------------------------------------------------------------------------
@@ -41,12 +51,11 @@ architecture rtl of acu_mmio_edac_protected_stack is
 	signal reset_error_flags_n_internal:	std_logic;
 	
 
---???
 	type state_t is (
 		idle,
-		pop,
-		top,
-		push,
+		pop_1,pop_2,pop_3,
+		top_1,top_2,top_3,
+		push_1,push_2,push_3,
 		deassert_strobes,
 		error
 	);
@@ -140,16 +149,48 @@ begin
 				
 				----------------------------------------------------------------------------------------------
 								
-				when pop	=>	pop <= '1';
+				when pop_1	=>	adapt_pop <= '1';
+								adapt_re <= '1';
+								state <= pop_2;
+								
+				when pop_2 =>	if(adapt_re_ack = '1') then
+									state <= pop_3;
+								end if;
+									
+				when pop_3 =>	s_data_2_acu <= adapt_data;
+								adapt_pop <= '0';
+								adapt_re <= '0';
+								state <= deassert_strobes;
 				
 				----------------------------------------------------------------------------------------------
 								
-				when top_1	=>	top <= '1';
+				when top_1	=>	adapt_top <= '1';
+								adapt_re <= '1';
+								state <= top_2;
+								
+				when top_2 =>	if(adapt_re_ack = '1') then
+									state <= top_3;
+								end if;
+									
+				when top_3 =>	s_data_2_acu <= adapt_data;
+								adapt_top <= '0';
+								adapt_re <= '0';
+								state <= deassert_strobes;
 				
 				----------------------------------------------------------------------------------------------
 								
-				when push_1	=>	data_2_stack <= data_from_acu(data_width-1 downto 0);
-								push <= '1';
+				when push_1	=>	adapt_data <= data_from_acu(data_width-1 downto 0);
+								adapt_push <= '1';
+								adapt_we <= '1';
+								state <= push_2
+								
+				when push_2 =>	if(adapt_we_ack = '1') then
+									state <= push_3;
+								end if;
+								
+				when push_3 =>	adapt_push <= '0';
+								adapt_we <= '0';
+								state <= deassert_strobes;
 				
 				----------------------------------------------------------------------------------------------
 											
