@@ -188,6 +188,27 @@ begin
 
 				wait for CLK_PERIOD * 3;
                 
+			-- Single TOP operation
+				adapt_re <= '1';
+				wait for CLK_PERIOD/10;
+				adapt_top <= '1';
+				wait for CLK_PERIOD/10*19;
+                assert adapt_re_ack = '0'
+                	report "adapt_re_ack is not pulled down"
+                    severity failure;
+				adapt_top <= '0';
+				adapt_re <= '0';
+                wait until mem_re_ack = '1'; -- mem read completed
+                wait for CLK_PERIOD/10*15;
+                assert adapt_re_ack = '1'
+                	report "adapt_re_ack isn't swithed back to high"
+                    severity failure;
+                assert adapt_data /= TEST_DATA_1
+                	report "wrong data returned"
+                    severity failure;
+
+				wait for CLK_PERIOD * 3;
+
 			-- First POP operation
 				adapt_re <= '1';
 				wait for CLK_PERIOD/10;
