@@ -65,7 +65,7 @@ architecture rtl of edac_protected_stack is
 	signal state         : state_t;
 	signal stack_is_empty    : std_logic;
 	
-	
+begin
 	L_RESET_CIRCUITRY:	process ( clk, raw_reset_n )
 	begin
 		if ( raw_reset_n = '0' ) then
