@@ -20,6 +20,7 @@ architecture tb of testbench is
 	-- component declaration for the unit under test (uut)
 	component edac_protected_stack is
 		generic (
+			metastable_filter_bypass_recover_fsm_n:			boolean;
 			data_width      : integer range 0 to 16;
 			stack_size_log2 : integer range 0 to 16;
 			addr_push       : integer range 0 to 16;
@@ -39,7 +40,7 @@ architecture tb of testbench is
 			adapt_we_ack                 : out std_logic;
 			adapt_data                   : inout std_logic_vector( data_width-1 downto 0);
 			clk                          : in std_logic;
-			as_reset_n                   : in std_logic;
+			raw_reset_n                  : in std_logic;
 			recover_fsm_n                : in std_logic;
 			user_fsm_invalid             : out std_logic;
 			mem_data_in                  : in std_logic_vector( data_width-1 downto 0);
@@ -101,7 +102,7 @@ architecture tb of testbench is
 	signal adapt_we_ack                 : std_logic;
 	signal adapt_data                   : std_logic_vector( DATA_WIDTH-1 downto 0);
 	signal clk                          : std_logic := '0';
-	signal as_reset_n                   : std_logic := '1';
+	signal raw_reset_n                  : std_logic := '1';
 	signal recover_fsm_n                : std_logic := '1';
 	signal user_fsm_invalid             : std_logic;
 	signal mem_data_in                  : std_logic_vector( DATA_WIDTH-1 downto 0);
@@ -145,10 +146,10 @@ begin
 			begin
             
             -- Initial RESET --
-				as_reset_n <= '0';
+				raw_reset_n <= '0';
 				wait for CLK_PERIOD/10;
-				as_reset_n <= '1';
-				wait for CLK_PERIOD;
+				raw_reset_n <= '1';
+				wait for CLK_PERIOD * 4;
 			
 			-- First PUSH operation
             	adapt_data <= TEST_DATA_0;
@@ -193,22 +194,22 @@ begin
 				wait for CLK_PERIOD/10;
 				adapt_top <= '1';
 				wait for CLK_PERIOD/10*19;
-                assert adapt_re_ack = '0'
-                	report "adapt_re_ack is not pulled down"
+                assert adapt_re_ack = '0' 
+                	report "adapt_re_ack is not pulled down"  
                     severity failure;
-				adapt_top <= '0';
+				adapt_top <= '0'; 
 				adapt_re <= '0';
                 wait until mem_re_ack = '1'; -- mem read completed
                 wait for CLK_PERIOD/10*15;
-                assert adapt_re_ack = '1'
-                	report "adapt_re_ack isn't swithed back to high"
-                    severity failure;
-                assert adapt_data /= TEST_DATA_1
+                assert adapt_re_ack = '1' 
+                	report "adapt_re_ack isn't swithed back to high"  
+                    severity failure;                
+                assert adapt_data /= TEST_DATA_1 
                 	report "wrong data returned"
                     severity failure;
 
 				wait for CLK_PERIOD * 3;
-
+                
 			-- First POP operation
 				adapt_re <= '1';
 				wait for CLK_PERIOD/10;
@@ -260,6 +261,7 @@ begin
 	-- instantiate the design under test (DUT)
 	DUT : edac_protected_stack
 		generic map(
+		metastable_filter_bypass_recover_fsm_n => true,
 		data_width      => DATA_WIDTH, 
 		stack_size_log2 => ADDR_WIDTH, 
 		addr_push       => 1, 
@@ -276,7 +278,7 @@ begin
 			adapt_we_ack                 => adapt_we_ack, 
 			adapt_data                   => adapt_data, 
 			clk                          => clk, 
-			as_reset_n                   => as_reset_n, 
+			raw_reset_n                  => raw_reset_n, 
 			recover_fsm_n                => recover_fsm_n, 
 			user_fsm_invalid             => user_fsm_invalid, 
 			mem_data_in                  => mem_data_in, 
@@ -305,7 +307,7 @@ begin
 		)
 		port map(
 			clk  => clk,
-			as_reset_n => as_reset_n,
+			as_reset_n => raw_reset_n,
 			reset_error_flags_n => recover_fsm_n,
 			uncorrectable_error => mem_uncorrectable_error,
 			correctable_error => mem_correctable_error,
