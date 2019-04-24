@@ -12,6 +12,7 @@ entity acu_mmio_stack_adapter is
 	port (
 		clk:						in	std_logic;
 		raw_reset_n:				in	std_logic;
+		
 		write_strobe_from_acu:		in	std_logic;
 		read_strobe_from_acu:		in	std_logic;
 		s_data_2_acu:				out	std_logic_vector (15 downto 0);
@@ -19,8 +20,10 @@ entity acu_mmio_stack_adapter is
 		s_ready_2_acu:				out	std_logic;
 		cs:							in	std_logic;
 		address_from_acu:			in	std_logic_vector (15 downto 0);
+		
 		recover_fsm_n:				in	std_logic;
-		adapter_invalid:			out	std_logic
+		recover_fsm_n_ack:			out std_logic;
+		user_fsm_invalid:			out std_logic;
 		
 		adapt_push					 : out std_logic;
 		adapt_pop					 : out std_logic;
@@ -231,7 +234,10 @@ begin
 									adapt_we				=> adapt_we,
 									adapt_re_ack            => adapt_re_ack,
 									adapt_we_ack            => adapt_we_ack,
-									adapt_data				=> adapt_data
+									adapt_data				=> adapt_data,
+									recover_fsm_n			=> recover_fsm_n,
+									recover_fsm_n_ack		=> recover_fsm_n_ack,
+									user_fsm_invalid		=> user_fsm_invalid
 								);
 	
 	
