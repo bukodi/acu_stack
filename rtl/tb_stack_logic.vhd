@@ -10,11 +10,11 @@ end testbench;
 
 architecture tb of testbench is
 
-	constant CLK_PERIOD : time := 10 ns;
-    constant DATA_WIDTH : integer := 4;
-    constant ADDR_WIDTH : integer := 4;
-    constant TEST_DATA_0 : std_logic_vector( DATA_WIDTH-1 downto 0) := "1010";
-    constant TEST_DATA_1 : std_logic_vector( DATA_WIDTH-1 downto 0) := "0110";
+	constant CLK_PERIOD : time := 10 us;
+    constant DATA_WIDTH : integer := 8;
+    constant ADDR_WIDTH : integer := 5;
+    constant TEST_DATA_0 : std_logic_vector( DATA_WIDTH-1 downto 0) := "10001010";
+    constant TEST_DATA_1 : std_logic_vector( DATA_WIDTH-1 downto 0) := "11110110";
 
 
 	-- component declaration for the unit under test (uut)
@@ -153,6 +153,8 @@ begin
 			
 			-- First PUSH operation
             	adapt_data <= TEST_DATA_0;
+				wait for CLK_PERIOD/10;
+
 				adapt_we <= '1';
 				wait for CLK_PERIOD/10;
 				adapt_push <= '1';
@@ -160,7 +162,7 @@ begin
                 assert adapt_we_ack = '0' 
                 	report "adapt_we_ack is not pulled down"  
                     severity failure;
-				adapt_push <= '0'; 
+                
 				adapt_we <= '0';
                 wait until mem_we_ack = '1'; -- mem write completed
                 wait for CLK_PERIOD/10*15;
@@ -168,6 +170,8 @@ begin
                 	report "adapt_we_ack isn't swithed back to high"  
                     severity failure;                
 
+				adapt_push <= '0'; 
+            	adapt_data <= (others=>'Z');
 				wait for CLK_PERIOD * 3;
                 
 			-- Second PUSH operation
@@ -178,8 +182,7 @@ begin
 				wait for CLK_PERIOD/10*19;
                 assert adapt_we_ack = '0' 
                 	report "adapt_we_ack is not pulled down"  
-                    severity failure;
-				adapt_push <= '0'; 
+                    severity failure;                                
 				adapt_we <= '0';
                 wait until mem_we_ack = '1'; -- mem write completed
                 wait for CLK_PERIOD/10*15;
@@ -187,6 +190,8 @@ begin
                 	report "adapt_we_ack isn't swithed back to high"  
                     severity failure;                
 
+				adapt_push <= '0'; 
+            	adapt_data <= (others=>'Z');
 				wait for CLK_PERIOD * 3;
                 
 			-- Single TOP operation
@@ -197,17 +202,21 @@ begin
                 assert adapt_re_ack = '0' 
                 	report "adapt_re_ack is not pulled down"  
                     severity failure;
-				adapt_top <= '0'; 
 				adapt_re <= '0';
                 wait until mem_re_ack = '1'; -- mem read completed
-                wait for CLK_PERIOD/10*15;
-                assert adapt_re_ack = '1' 
+                wait for CLK_PERIOD*3;
+
+				assert adapt_re_ack = '1' 
                 	report "adapt_re_ack isn't swithed back to high"  
                     severity failure;                
-                assert adapt_data /= TEST_DATA_1 
-                	report "wrong data returned"
+                assert adapt_data = TEST_DATA_1 
+                	report "First TOP failed wrong data returned." 
+                    & " expected=" &  to_string(TEST_DATA_1)
+                    & " actual=" &  to_string(adapt_data)
                     severity failure;
 
+				wait for CLK_PERIOD * 2;
+				adapt_top <= '0'; 
 				wait for CLK_PERIOD * 3;
                 
 			-- First POP operation
@@ -218,17 +227,21 @@ begin
                 assert adapt_re_ack = '0' 
                 	report "adapt_re_ack is not pulled down"  
                     severity failure;
-				adapt_pop <= '0'; 
 				adapt_re <= '0';
                 wait until mem_re_ack = '1'; -- mem read completed
-                wait for CLK_PERIOD/10*15;
-                assert adapt_re_ack = '1' 
+                wait for CLK_PERIOD*3;
+
+				assert adapt_re_ack = '1' 
                 	report "adapt_re_ack isn't swithed back to high"  
                     severity failure;                
-                assert adapt_data /= TEST_DATA_1 
-                	report "wrong data returned"
+                assert adapt_data = TEST_DATA_1 
+                	report "First POP failed, wrong data returned." 
+                    & " expected=" &  to_string(TEST_DATA_1)
+                    & " actual=" &  to_string(adapt_data)
                     severity failure;
 
+				wait for CLK_PERIOD * 2;
+				adapt_pop <= '0'; 
 				wait for CLK_PERIOD * 3;
                 
 			-- Second POP operation
@@ -239,17 +252,21 @@ begin
                 assert adapt_re_ack = '0' 
                 	report "adapt_re_ack is not pulled down"  
                     severity failure;
-				adapt_pop <= '0'; 
 				adapt_re <= '0';
                 wait until mem_re_ack = '1'; -- mem read completed
-                wait for CLK_PERIOD/10*15;
+                wait for CLK_PERIOD*3;
+
                 assert adapt_re_ack = '1' 
                 	report "adapt_re_ack isn't swithed back to high"  
                     severity failure;                
-                assert adapt_data /= TEST_DATA_0 
-                	report "wrong data returned"
+                assert adapt_data = TEST_DATA_0 
+                	report "Second POP failed, wrong data returned." 
+                    & " expected=" &  to_string(TEST_DATA_0)
+                    & " actual=" &  to_string(adapt_data)
                     severity failure;
 
+				wait for CLK_PERIOD * 2;
+				adapt_pop <= '0'; 
 				wait for CLK_PERIOD * 3;
                 
 			-- Trailing edge

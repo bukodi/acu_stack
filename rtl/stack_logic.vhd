@@ -32,7 +32,7 @@ entity edac_protected_stack is
 		mem_we                       : out std_logic;
 		mem_re_ack                   : in std_logic;
 		mem_we_ack                   : in std_logic;
-		mem_addr                     : out std_logic_vector(data_width - 1 downto 0)
+		mem_addr                     : out std_logic_vector(stack_size_log2 - 1 downto 0)
 	);
 end entity edac_protected_stack;
 ------------------------------------------------------------------------
@@ -51,12 +51,15 @@ architecture rtl of edac_protected_stack is
 		push_calc_addr, 
 		push_before_mem, 
 		push_after_mem, 
+		push_after_mem2, 
 		pop_calc_addr,
 		pop_before_mem, 
 		pop_after_mem,
+		pop_after_mem2,
 		top_calc_addr, 
 		top_before_mem, 
 		top_after_mem, 
+		top_after_mem2, 
 		invalid
 	);
 
@@ -64,8 +67,14 @@ architecture rtl of edac_protected_stack is
 	signal stack_pointer : std_logic_vector(stack_size_log2 - 1 downto 0);
 	signal state         : state_t;
 	signal stack_is_empty    : std_logic;
-	
+
+	signal adapt_data_out    : std_logic_vector(data_width - 1 downto 0);
+
 begin
+    -- Tri-state handling
+	adapt_data <= adapt_data_out when ( adapt_re_ack = '1' and adapt_re = '0' and ( adapt_top = '1' or adapt_pop = '1' ) )
+    	else (others=>'Z');
+
 	L_RESET_CIRCUITRY:	process ( clk, raw_reset_n )
 	begin
 		if ( raw_reset_n = '0' ) then
@@ -115,9 +124,9 @@ begin
             stack_is_empty 		<= '1';
 			adapt_re_ack 		<= '1';
 			adapt_we_ack 		<= '1';
-			adapt_data 			<= (others => '0');
+			adapt_data_out		<= (others => '0');
 			user_fsm_invalid 	<= '0';
-			mem_data_out 		<= (others => '0');
+			mem_data_out 		<= (others => 'Z');
 			mem_re 				<= '0';
 			mem_we 				<= '0';
 			mem_addr 			<= (others => '0');
@@ -206,7 +215,7 @@ begin
 				--PUSH--------------------------------------------------
 				when push_calc_addr =>	
 					report "CASE: push_calc_addr";
-                	if (adapt_we /= '1' or adapt_re /= '0' 
+                	if ( adapt_re /= '0' 
                     	or adapt_push /= '1' or adapt_pop /= '0' or adapt_top /= '0' 
                         or mem_re_ack /= '1' or mem_we_ack /= '1') 
 					then
@@ -243,16 +252,29 @@ begin
 	                	if (mem_we_ack = '1') then
 							report "CASE: push_before_mem and mem_we_ack is HIGH";
 							adapt_we_ack <= '1';
-							state	<= idle;
+							state	<= push_after_mem2;
 						else
 						report "CASE:  push_after_mem and waiting for mem_we_ack HIGH";
 						end if;
 					end if;
 										
+				when push_after_mem2 =>	
+					report "CASE: push_after_mem2";
+					if (adapt_re /= '0' 
+                        or adapt_pop /= '0' or adapt_top /= '0' 
+                        or mem_re_ack /= '1') 
+					then
+						state <= invalid;
+					else
+                    	if adapt_push = '0' then
+							state	<= idle;
+                        end if;
+					end if;
+										
 				--POP---------------------------------------------------
 				when pop_calc_addr =>	
 					report "CASE: pop_calc_addr";
-                	if (adapt_re /= '1' or adapt_we /= '0' 
+                	if ( adapt_we /= '0' 
                 		or adapt_pop /= '1' or adapt_top /= '0' or adapt_push /= '0' 
                 		or mem_re_ack /= '1' or mem_we_ack /= '1') 
 					then
@@ -277,7 +299,7 @@ begin
 						else
 							report "CASE: pop_before_mem and waiting for mem_re_ack LOW";
 						end if;
-				end if;
+					end if;
 										
 				when pop_after_mem =>	
 					report "CASE: pop_after_mem";
@@ -294,18 +316,32 @@ begin
 							else
 								stack_pointer <= std_logic_vector(unsigned(stack_pointer) - 1);
 							end if;
-							adapt_data <= mem_data_in;
-							adapt_re_ack <= '1';
-							state	<= idle;
+							adapt_data_out <= mem_data_in;
+							state	<= pop_after_mem2;
 						else
 							report "CASE: pop_after_mem and waiting for mem_re_ack HIGH";
 						end if;
-				end if;
+					end if;
 										
+				when pop_after_mem2 =>	
+					report "CASE: pop_after_mem2";
+					if (adapt_we /= '0' 
+						or adapt_top /= '0' or adapt_push /= '0' 
+						or mem_we_ack /= '1') 
+					then
+						state <= invalid;
+					else
+                    	if adapt_pop = '1' then
+							adapt_re_ack <= '1';
+                        else
+							state	<= idle;
+                        end if;
+					end if;
+                
 				--TOP---------------------------------------------------
 				when top_calc_addr =>
 					report "CASE: top_calc_addr";
-                	if (adapt_re /= '1' or adapt_we /= '0'
+                	if ( adapt_we /= '0'
                     	or adapt_top /= '1' or adapt_pop /= '0' or adapt_push /= '0'
                         or mem_re_ack /= '1' or mem_we_ack /= '1')
 					then
@@ -342,14 +378,29 @@ begin
 					else
 						if (mem_re_ack = '1') then
 							report "CASE: top_after_mem and mem_re_ack is HIGH";
-							adapt_data <= mem_data_in;
-							adapt_re_ack <= '1';
-							state	<= idle;
+							adapt_data_out <= mem_data_in;
+							state	<= top_after_mem2;
 						else
 							report "CASE: top_after_mem and waiting for mem_re_ack HIGH";
 						end if;
 				end if;
-										
+
+				when top_after_mem2 =>	
+					report "CASE: top_after_mem2";
+					if (adapt_we /= '0' 
+						or adapt_pop /= '0' or adapt_push /= '0' 
+						or mem_we_ack /= '1') 
+					then
+						state <= invalid;
+					else
+                    	if adapt_top = '1' then
+							adapt_re_ack <= '1';
+                        else
+							state	<= idle;
+                        end if;
+					end if;
+                
+
 				--INVALID STATE-----------------------------------------
 				when invalid =>			
 					report "CASE: invalid";
@@ -362,43 +413,6 @@ begin
 			end case;
 		end if;
 	end process;
-	
-	
-	L_EDAC_MEMORY_WRAPPER:	entity work.edac_protected_ram()
-								generic map (
-									address_width 						=> address_width,
-									data_width 							=> data_width,
-									edac_latency						=> open
-									prot_bram_registered_in				=> open
-									prot_bram_registered_out			=> open
-									prot_bram_scrubber_present			=> open
-									prot_bram_scrb_prescaler_width		=> open
-									prot_bram_scrb_timer_width			=> open
-									init_from_file						=> open
-									initfile_path						=> "",
-									initfile_format						=> ""
-								)
-									
-								port map (
-									clk												=> clk,
-									as_reset_n										=> as_reset_n,
-									reset_error_flags_n								=> recover_fsm_n,
-									uncorrectable_error								=> open,
-									correctable_error								=> open,
-									we												=> mem_we,
-									we_ack											=> mem_we_ack, 
-									re												=> mem_re,
-									re_ack											=> mem_re_ack, 
-									write_address									=> mem_addr,
-									read_address									=> mem_addr, 
-									data_in											=> mem_data_out,
-									data_out 										=> mem_data_in,
-									error_injection									=> open
-								 	force_scrubbing 								=> open
-								 	scrubber_invalid_state_error 					=> open
-								 	scrubber_recover_fsm_n			 				=> open
-									dbg_scrubber_invalid_state_error_injection		=> open
-								);
 
 	
 end architecture rtl;
