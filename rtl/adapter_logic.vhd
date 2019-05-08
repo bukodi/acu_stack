@@ -49,11 +49,11 @@ architecture rtl of acu_mmio_stack_adapter is
 	signal adapt_push:					 std_logic;
 	signal adapt_pop:					 std_logic;
 	signal adapt_top:					 std_logic;
-	signal adapt_re: 					 std_logic;
-	signal adapt_we:					 std_logic;
+	--signal adapt_re: 					 std_logic;
+	--signal adapt_we:					 std_logic;
 	signal adapt_re_ack:                 std_logic;
 	signal adapt_we_ack:                 std_logic;
-	signal adapt_data_in:                std_logic_vector(data_width - 1 downto 0);
+	--signal adapt_data_in:                std_logic_vector(data_width - 1 downto 0);
 	signal adapt_data_out:               std_logic_vector(data_width - 1 downto 0);
 
 	signal mem_data_in                  : std_logic_vector( data_width-1 downto 0);
@@ -109,7 +109,12 @@ begin
 		adapt_pop <= '1' when ( unsigned(address_from_acu) = address_pop ) else '0';
 		adapt_top <= '1' when ( unsigned(address_from_acu) = address_top ) else '0';
 	
-		s_ready_2_acu <= adapt_re_ack and adapt_we_ack and cs;
+		s_ready_2_acu <= '1' when (cs = '1') 
+        	and (
+            	((read_strobe_from_acu_internal = '0')  and (adapt_re_ack ='1')) 
+                or
+        		((write_strobe_from_acu_internal = '0')  and (adapt_we_ack ='1'))
+            ) else '0';
 		s_data_2_acu(data_width-1 downto 0) <= adapt_data_out when cs = '1' else (others => 'Z');
 		s_data_2_acu(15 downto data_width) <= (others => '0') when cs = '1' else (others => 'Z');
 	end block;
@@ -128,7 +133,7 @@ begin
 			adapt_we				=> write_strobe_from_acu_internal,
 			adapt_re_ack            => adapt_re_ack,
 			adapt_we_ack            => adapt_we_ack,
-			adapt_data_in			=> adapt_data_in,
+			adapt_data_in			=> data_from_acu,
 			adapt_data_out			=> adapt_data_out,
 			clk						=> clk,
 			raw_reset_n				=> raw_reset_n,
