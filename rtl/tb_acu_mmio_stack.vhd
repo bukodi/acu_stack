@@ -6,6 +6,7 @@ end entity tb_acu_mmio_stack;
 ---------------------------------------------------------------------------------------------------
 architecture behavior of tb_acu_mmio_stack is
 
+	signal clear_address:						std_logic	 					:= '0';
 	signal generate_read_cycle:						std_logic	 					:= '0';
 	signal generate_write_cycle:					std_logic						:= '0';
 	signal address:									std_logic_vector (15 downto 0) 	:= (others => '0');
@@ -55,6 +56,7 @@ begin
 
 	L_ACU_MMIO_BFM:	entity work.acu_mmio_bfm(behavior)
 		port map (
+        	clear_address 							=> clear_address,
 			generate_read_cycle						=> generate_read_cycle,
 			generate_write_cycle					=> generate_write_cycle,
 			address									=> address,
@@ -119,9 +121,13 @@ begin
 		wait until falling_edge(busy);
 		generate_write_cycle <= '0';
 
-		wait for CLK_PERIOD * 2;
-		address <= X"0000";		-- Clear addr
+		report "*** First PUSH completed ***";
+        
 		wait for CLK_PERIOD * 3;
+		clear_address <= '1';		-- Clear addr
+		wait for CLK_PERIOD * 1;
+		clear_address <= '0';		
+		wait for CLK_PERIOD * 2;
 		
 	-- Second PUSH operation
 		address <= X"0001";		-- PUSH addr
@@ -129,10 +135,14 @@ begin
 		generate_write_cycle <= '1';
 		wait until falling_edge(busy);
 		generate_write_cycle <= '0';
-
-		wait for CLK_PERIOD * 2;
-		address <= X"0000";		-- Clear addr
+        
+        report "*** Second PUSH completed ***";
+        
 		wait for CLK_PERIOD * 3;
+		clear_address <= '1';		-- Clear addr
+		wait for CLK_PERIOD * 1;
+		clear_address <= '0';		
+		wait for CLK_PERIOD * 2;
 
 	-- Single TOP operation
 		address <= X"0003";		-- TOP addr
@@ -146,9 +156,11 @@ begin
 			& " actual=" &  to_string(stack_data)
 			severity failure;
 
-		wait for CLK_PERIOD * 2;
-		address <= X"0000";		-- Clear addr
 		wait for CLK_PERIOD * 3;
+		clear_address <= '1';		-- Clear addr
+		wait for CLK_PERIOD * 1;
+		clear_address <= '0';		
+		wait for CLK_PERIOD * 2;
 		
 	-- First POP operation
 		address <= X"0002";		-- POP addr
@@ -162,9 +174,11 @@ begin
 			& " actual=" &  to_string(stack_data)
 			severity failure;
 
-		wait for CLK_PERIOD * 2;
-		address <= X"0000";		-- Clear addr
 		wait for CLK_PERIOD * 3;
+		clear_address <= '1';		-- Clear addr
+		wait for CLK_PERIOD * 1;
+		clear_address <= '0';		
+		wait for CLK_PERIOD * 2;
 		
 	-- Second POP operation
 		address <= X"0002";		-- POP addr
@@ -178,9 +192,11 @@ begin
 			& " actual=" &  to_string(stack_data)
 			severity failure;
 
-		wait for CLK_PERIOD * 2;
-		address <= X"0000";		-- Clear addr
 		wait for CLK_PERIOD * 3;
+		clear_address <= '1';		-- Clear addr
+		wait for CLK_PERIOD * 1;
+		clear_address <= '0';		
+		wait for CLK_PERIOD * 2;
 		
 	-- Trailing edge
 		report "*** TESTS COMPLETED SUCCESSFULLY ***";  

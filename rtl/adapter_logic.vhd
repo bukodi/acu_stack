@@ -34,6 +34,8 @@ end entity acu_mmio_stack_adapter;
 architecture rtl of acu_mmio_stack_adapter is
 
 -- Metastable filter resources
+	signal write_strobe_to_ul:				std_logic;
+	signal read_strobe_to_ul:				std_logic;
 	signal ff_write_strobe_from_acu:		std_logic;
 	signal write_strobe_from_acu_filtered:	std_logic;
 	signal write_strobe_from_acu_internal:	std_logic;
@@ -94,8 +96,18 @@ begin
 	
 	L_METASTABLE_FILTER_BYPASS: block
 	begin
-		write_strobe_from_acu_internal <= write_strobe_from_acu when metastable_filter_bypass_acu = true else write_strobe_from_acu_filtered;
-		read_strobe_from_acu_internal <= read_strobe_from_acu when metastable_filter_bypass_acu = true else read_strobe_from_acu_filtered;
+		write_strobe_from_acu_internal <= write_strobe_from_acu 
+          	when metastable_filter_bypass_acu = true 
+            else write_strobe_from_acu_filtered;
+		read_strobe_from_acu_internal <= read_strobe_from_acu 
+          	when metastable_filter_bypass_acu = true 
+            else read_strobe_from_acu_filtered;
+	end block;	
+	
+	L_STROBES_AND_CS: block
+	begin
+		write_strobe_to_ul <= write_strobe_from_acu_internal and cs;
+		read_strobe_to_ul <= read_strobe_from_acu_internal and cs;
 	end block;	
 	
 	L_LOCAL_ADDRESS_DECODER: block
@@ -109,12 +121,14 @@ begin
 		adapt_pop <= '1' when ( unsigned(address_from_acu) = address_pop ) else '0';
 		adapt_top <= '1' when ( unsigned(address_from_acu) = address_top ) else '0';
 	
-		s_ready_2_acu <= '1' when (cs = '1') 
-        	and (
-            	((read_strobe_from_acu_internal = '0')  and (adapt_re_ack ='1')) 
-                or
-        		((write_strobe_from_acu_internal = '0')  and (adapt_we_ack ='1'))
-            ) else '0';
+		s_ready_2_acu <= '0' when ((adapt_re_ack ='0') or (adapt_we_ack ='0')) 
+        	else '1';
+--		s_ready_2_acu <= '1' when (cs = '1') 
+--        	and (
+--            	((read_strobe_from_acu_internal = '0')  and (adapt_re_ack ='1')) 
+--                or
+--        		((write_strobe_from_acu_internal = '0')  and (adapt_we_ack ='1'))
+--            ) else '0';
 		s_data_2_acu(data_width-1 downto 0) <= adapt_data_out when cs = '1' else (others => 'Z');
 		s_data_2_acu(15 downto data_width) <= (others => '0') when cs = '1' else (others => 'Z');
 	end block;
@@ -129,8 +143,8 @@ begin
 			adapt_push				=> adapt_push,
 			adapt_pop				=> adapt_pop,
 			adapt_top				=> adapt_top,
-			adapt_re 				=> read_strobe_from_acu_internal,
-			adapt_we				=> write_strobe_from_acu_internal,
+			adapt_re 				=> read_strobe_to_ul,
+			adapt_we				=> write_strobe_to_ul,
 			adapt_re_ack            => adapt_re_ack,
 			adapt_we_ack            => adapt_we_ack,
 			adapt_data_in			=> data_from_acu,

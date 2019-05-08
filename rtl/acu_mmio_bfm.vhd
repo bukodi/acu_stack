@@ -4,6 +4,7 @@ use ieee.std_logic_1164.all;
 entity acu_mmio_bfm is
 	port (
 		-- Host interface
+		clear_address:							in	std_logic;
 		generate_read_cycle:					in	std_logic;
 		generate_write_cycle:					in	std_logic;
 		address:								in	std_logic_vector (15 downto 0);
@@ -50,7 +51,10 @@ begin
 	L_MMIO_IF:	process
 	begin
 	
-		wait until (rising_edge(generate_read_cycle) or rising_edge(generate_write_cycle));
+		wait until (
+        	rising_edge(generate_read_cycle) 
+            or rising_edge(generate_write_cycle) 
+            or rising_edge(clear_address) );
 		
 		busy <= '1';
 		
@@ -68,6 +72,8 @@ begin
 			data_read <= data_from_dmem;
 			busy <= '0';
 			
+		elsif ( rising_edge(clear_address) ) then
+        	address_2_dmem <= (others => '0');
 		else
 		
 			-- generate an MMIO write cycle...
