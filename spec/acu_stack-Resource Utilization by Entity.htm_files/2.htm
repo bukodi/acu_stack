@@ -1,0 +1,195 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML><HEAD>
+<TITLE>Fitter Resource Utilization by Entity</TITLE>
+
+<link rel="stylesheet" type="text/css" href="css/reset.css">
+<link rel="stylesheet" type="text/css" href="css/base.css">
+<link rel="stylesheet" type="text/css" href="css/jquery-ui.css">
+<link rel="stylesheet" type="text/css" href="css/jquery.layout-latest.css">
+<link rel="stylesheet" type="text/css" href="css/override.css">
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.layout-latest.js"></script>
+
+
+</HEAD>
+
+<BODY>
+<TABLE>
+<thead><TR  bgcolor="#BFBFBF">
+<TH>Compilation Hierarchy Node</TH>
+<TH>Logic Cells</TH>
+<TH>Dedicated Logic Registers</TH>
+<TH>I/O Registers</TH>
+<TH>Memory Bits</TH>
+<TH>M9Ks</TH>
+<TH>DSP Elements</TH>
+<TH>DSP 9x9</TH>
+<TH>DSP 18x18</TH>
+<TH>DSP 36x36</TH>
+<TH>Pins</TH>
+<TH>Virtual Pins</TH>
+<TH>LUT-Only LCs</TH>
+<TH>Register-Only LCs</TH>
+<TH>LUT/Register LCs</TH>
+<TH>Full Hierarchy Name</TH>
+<TH>Library Name</TH>
+</TR>
+</thead><tbody><TR >
+<TD >|acu_stack</TD>
+<TD >352 (14)</TD>
+<TD >227 (4)</TD>
+<TD >0 (0)</TD>
+<TD >672</TD>
+<TD >1</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >56</TD>
+<TD >0</TD>
+<TD >125 (11)</TD>
+<TD >113 (1)</TD>
+<TD >114 (0)</TD>
+<TD >|acu_stack</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;|edac_protected_ram:MEM|</TD>
+<TD >172 (12)</TD>
+<TD >157 (8)</TD>
+<TD >0 (0)</TD>
+<TD >672</TD>
+<TD >1</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >15 (4)</TD>
+<TD >80 (0)</TD>
+<TD >77 (8)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|edac_memory_core:L_EDAC_PROTECTED_MEMORY|</TD>
+<TD >160 (76)</TD>
+<TD >149 (75)</TD>
+<TD >0 (0)</TD>
+<TD >672</TD>
+<TD >1</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >11 (1)</TD>
+<TD >80 (47)</TD>
+<TD >69 (28)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM|edac_memory_core:L_EDAC_PROTECTED_MEMORY</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|altsyncram:memory_content_rtl_0|</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >672</TD>
+<TD >1</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM|edac_memory_core:L_EDAC_PROTECTED_MEMORY|altsyncram:memory_content_rtl_0</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|altsyncram_bfi1:auto_generated|</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >672</TD>
+<TD >1</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >0 (0)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM|edac_memory_core:L_EDAC_PROTECTED_MEMORY|altsyncram:memory_content_rtl_0|altsyncram_bfi1:auto_generated</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|edac_decoder:L_DECODER|</TD>
+<TD >43 (43)</TD>
+<TD >37 (37)</TD>
+<TD >0 (0)</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >6 (6)</TD>
+<TD >5 (5)</TD>
+<TD >32 (32)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM|edac_memory_core:L_EDAC_PROTECTED_MEMORY|edac_decoder:L_DECODER</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|edac_encoder:L_ENCODER|</TD>
+<TD >41 (41)</TD>
+<TD >37 (37)</TD>
+<TD >0 (0)</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >4 (4)</TD>
+<TD >28 (28)</TD>
+<TD >9 (9)</TD>
+<TD >|acu_stack|edac_protected_ram:MEM|edac_memory_core:L_EDAC_PROTECTED_MEMORY|edac_encoder:L_ENCODER</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody><tbody><TR >
+<TD >&nbsp;&nbsp;&nbsp;|edac_protected_stack:L_USER_LOGIC|</TD>
+<TD >172 (172)</TD>
+<TD >66 (66)</TD>
+<TD >0 (0)</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >0</TD>
+<TD >99 (99)</TD>
+<TD >32 (32)</TD>
+<TD >41 (41)</TD>
+<TD >|acu_stack|edac_protected_stack:L_USER_LOGIC</TD>
+<TD >&nbsp;</TD>
+</TR>
+</tbody></TABLE>
+
+<noscript>JavaScript must be enabled to view the report.</noscript>
+</BODY>
+</HTML>

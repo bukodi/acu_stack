@@ -2,15 +2,15 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 ---------------------------------------------------------------------------------------------------
-entity acu_mmio_stack_adapter is
+entity acu_stack is
 	generic (
-		metastable_filter_bypass_reset_error_flags_n:	boolean;
-		metastable_filter_bypass_acu:					boolean;
-		data_width:										integer range 0 to 16;
-		address_pop:									integer range 0 to 16;
-		address_top:									integer range 0 to 16;
-		address_push:									integer range 0 to 16;
-		stack_size_log2: 								integer range 0 to 16
+		metastable_filter_bypass_reset_error_flags_n:	boolean:= false;
+		metastable_filter_bypass_acu:					boolean := false;
+		data_width:										integer range 0 to 16 := 16;
+		address_pop:									integer range 0 to 16 := 2;
+		address_top:									integer range 0 to 16 := 3;
+		address_push:									integer range 0 to 16 := 1;
+		stack_size_log2: 								integer range 0 to 16 := 5
 	);
 	
 	port (
@@ -29,9 +29,9 @@ entity acu_mmio_stack_adapter is
 		user_fsm_invalid:			out std_logic
 		
 	);
-end entity acu_mmio_stack_adapter;
+end entity acu_stack;
 ---------------------------------------------------------------------------------------------------
-architecture rtl of acu_mmio_stack_adapter is
+architecture rtl of acu_stack is
 
 -- Metastable filter resources
 	signal write_strobe_to_ul:				std_logic;

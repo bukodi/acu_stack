@@ -35,7 +35,7 @@ entity edac_memory_core is
 		as_reset_n:										in	std_logic;
 		error_injection:								in	std_logic_vector (data_width-1 downto 0);
 		data_in:										in	std_logic_vector (data_width-1 downto 0);
-		data_out:										buffer	std_logic_vector (data_width-1 downto 0);
+		data_out:										out	std_logic_vector (data_width-1 downto 0);
 		write_address:									in	std_logic_vector (address_width-1 downto 0);
 		read_address:									in	std_logic_vector (address_width-1 downto 0);
 		write_strobe:									in	std_logic;
