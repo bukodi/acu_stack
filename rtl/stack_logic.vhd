@@ -6,10 +6,7 @@ entity edac_protected_stack is
 	generic (
 		metastable_filter_bypass_recover_fsm_n:			boolean;
 		data_width:		 								integer range 0 to 16;
-		stack_size_log2: 								integer range 0 to 16;
-		addr_push:		 								integer range 0 to 16;
-		addr_pop: 										integer range 0 to 16;
-		addr_top:	 									integer range 0 to 16
+		stack_size_log2: 								integer range 0 to 16
 	);
 
 	port (
@@ -20,7 +17,8 @@ entity edac_protected_stack is
 		adapt_we					 : in std_logic;
 		adapt_re_ack                 : out std_logic;
 		adapt_we_ack                 : out std_logic;
-		adapt_data                   : inout std_logic_vector(data_width - 1 downto 0);
+		adapt_data_in                : in std_logic_vector(data_width - 1 downto 0);
+		adapt_data_out               : out std_logic_vector(data_width - 1 downto 0);
 		clk                          : in std_logic;
 		raw_reset_n                  : in std_logic;
 		recover_fsm_n                : in std_logic;
@@ -68,13 +66,7 @@ architecture rtl of edac_protected_stack is
 	signal state         : state_t;
 	signal stack_is_empty    : std_logic;
 
-	signal adapt_data_out    : std_logic_vector(data_width - 1 downto 0);
-
 begin
-    -- Tri-state handling
-	adapt_data <= adapt_data_out when ( adapt_re_ack = '1' and adapt_re = '0' and ( adapt_top = '1' or adapt_pop = '1' ) )
-    	else (others=>'Z');
-
 	L_RESET_CIRCUITRY:	process ( clk, raw_reset_n )
 	begin
 		if ( raw_reset_n = '0' ) then
@@ -152,7 +144,7 @@ begin
                                 stack_is_empty 		<= '0';
 								stack_pointer		<=	(others => '0');
                                 mem_addr <= (others => '0');
-								mem_data_out <= adapt_data;
+								mem_data_out <= adapt_data_in;
 	                            adapt_we_ack <= '0';
 								state					<=	push_calc_addr;
 							elsif ( stack_pointer = sp_all_one ) then 
@@ -162,7 +154,7 @@ begin
                             	report "PROC: push and increment stack_pointer";
 								stack_pointer <= std_logic_vector(unsigned(stack_pointer) + 1);
                                 mem_addr <= std_logic_vector(unsigned(stack_pointer) + 1);
-                            	mem_data_out <= adapt_data;
+                            	mem_data_out <= adapt_data_in;
 	                            adapt_we_ack <= '0';
 								state					<=	push_calc_addr;
 							end if;
