@@ -20,9 +20,9 @@ scale 100 as 150 pixels
 
 
 @0
+AP is L
 AWE is L
 AWEACK is L
-AP is L
 ST is idle
 MWE is L
 MWEACK is L
@@ -47,7 +47,6 @@ AWEACK -> AP@+20
 
 @120
 AWE is L
-AP is L
 
 @200
 MWE is H
@@ -68,9 +67,16 @@ MWEACK is H
 MWEACK -> ST@+20
 
 @400
-ST is idle
+ST is push_after_mem2
 AWEACK is H
 ST -> AWEACK
+
+@470
+AP is L
+AP -> ST@+30
+
+@500
+ST is idle
 
 
 @MWE

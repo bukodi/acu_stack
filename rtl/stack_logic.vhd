@@ -111,14 +111,14 @@ begin
 	begin
 		if (as_reset_n = '0') then
            	report "Reset detected";
-
+           	
 			stack_pointer 		<= sp_all_zero;
             stack_is_empty 		<= '1';
 			adapt_re_ack 		<= '1';
 			adapt_we_ack 		<= '1';
 			adapt_data_out		<= (others => '0');
 			user_fsm_invalid 	<= '0';
-			mem_data_out 		<= (others => 'Z');
+			mem_data_out 		<= (others => '0');
 			mem_re 				<= '0';
 			mem_we 				<= '0';
 			mem_addr 			<= (others => '0');
@@ -130,10 +130,10 @@ begin
 				when idle => 			
                     adapt_we_ack <= '1';
                     adapt_re_ack <= '1';
-					if (adapt_push = '1') then
+					if (adapt_push = '1' and adapt_we = '1') then
 						report "CASE: idle && adapt_push detected";
 						-- check invalid state
-						if (adapt_we /= '1' or adapt_re /= '0' 
+						if (adapt_re /= '0' 
 							or adapt_pop /= '0' or adapt_top /= '0' 
 							or mem_re_ack /= '1' or mem_we_ack /= '1') 
 						then
@@ -160,10 +160,10 @@ begin
 							end if;
 						end if;
 
-					elsif (adapt_pop = '1') then
+					elsif (adapt_pop = '1' and adapt_re = '1') then
 						report "CASE: idle && adapt_pop detected";
 						-- check invalid state
-						if (adapt_re /= '1' or adapt_we /= '0' 
+						if (adapt_we /= '0' 
                         	or adapt_push /= '0' or adapt_top /= '0' 
                             or mem_re_ack /= '1' or mem_we_ack /= '1') 
 						then
@@ -181,10 +181,10 @@ begin
 						end if;
                         
                         
-					elsif (adapt_top = '1') then
+					elsif (adapt_top = '1' and adapt_re = '1') then
 						report "CASE: idle && adapt_top detected";
 						-- check invalid state
-						if (adapt_re /= '1' or adapt_we /= '0' 
+						if (adapt_we /= '0' 
                         	or adapt_push /= '0' or adapt_pop /= '0' 
                             or mem_re_ack /= '1' or mem_we_ack /= '1') 
 						then

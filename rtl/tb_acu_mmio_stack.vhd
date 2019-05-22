@@ -26,10 +26,10 @@ architecture behavior of tb_acu_mmio_stack is
 	signal acu_address:								std_logic_vector (15 downto 0);
 	signal acu_data:								std_logic_vector (15 downto 0);
 	signal stack_data:								std_logic_vector (15 downto 0);
-	signal rx:										std_logic						:= '1';
-	signal tx:										std_logic;
 
-	constant CLK_PERIOD : time := 10 us;
+	signal user_fsm:   std_logic;
+
+	constant CLK_PERIOD : time := 1 us;
     constant DATA_WIDTH : integer := 16;
     constant ADDR_WIDTH : integer := 5;
     constant TEST_DATA_0 : std_logic_vector( DATA_WIDTH-1 downto 0) := "0000111101001010";
@@ -75,7 +75,7 @@ begin
 			data_2_dmem								=> acu_data
 		);
 	
-
+	-- L_MMIO_STACK:	entity work.acu_stack(structure)
 	L_MMIO_STACK:	entity work.acu_mmio_stack_adapter(rtl)
 		generic map (
 			metastable_filter_bypass_reset_error_flags_n => true, 
@@ -108,11 +108,11 @@ begin
 	begin
 
 	-- Initial RESET --
-		wait for CLK_PERIOD/10;
+		wait for CLK_PERIOD*2;
 		raw_reset_n <= '0';
 		wait for CLK_PERIOD*2;
 		raw_reset_n <= '1';
-		wait for CLK_PERIOD*4;
+		wait for CLK_PERIOD*2;
 	
 	-- First PUSH operation
 		address <= X"0001";		-- PUSH addr

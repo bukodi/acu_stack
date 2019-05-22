@@ -74,6 +74,7 @@ begin
 			
 		elsif ( rising_edge(clear_address) ) then
         	address_2_dmem <= (others => '0');
+        	busy <= '0';
 		else
 		
 			-- generate an MMIO write cycle...

@@ -129,8 +129,8 @@ begin
 --                or
 --        		((write_strobe_from_acu_internal = '0')  and (adapt_we_ack ='1'))
 --            ) else '0';
-		s_data_2_acu(data_width-1 downto 0) <= adapt_data_out when cs = '1' else (others => 'Z');
-		s_data_2_acu(15 downto data_width) <= (others => '0') when cs = '1' else (others => 'Z');
+		s_data_2_acu(data_width-1 downto 0) <= adapt_data_out when cs = '1' else (others => '0');
+		s_data_2_acu(15 downto data_width) <= (others => '0') when cs = '1' else (others => '0');
 	end block;
 	
 	L_USER_LOGIC:	entity work.edac_protected_stack(rtl)
